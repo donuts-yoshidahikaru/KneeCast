@@ -1,4 +1,4 @@
-package com.example.weatherapp.network
+package com.tutorial.kneecast.network
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
