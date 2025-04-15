@@ -31,7 +31,8 @@ android {
             }
         }
 
-        buildConfigField("String", "CLIENT_ID", "\"${localProperties["CLIENT_ID"]}\"")
+        buildConfigField("String", "YAHOO_CLIENT_ID", "\"${localProperties["YAHOO_CLIENT_ID"]}\"")
+        buildConfigField("String", "METEOSOURCE_API_KEY", "\"${localProperties["METEOSOURCE_API_KEY"]}\"")
     }
 
     buildTypes {
