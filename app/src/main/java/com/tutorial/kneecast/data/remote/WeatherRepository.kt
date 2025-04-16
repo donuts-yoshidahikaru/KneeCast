@@ -9,15 +9,18 @@ import retrofit2.Response
 
 class WeatherRepository {
 
-    // ベースURLはYahoo! APIのエンドポイントの共通部分を指定
-    private val baseUrl = "https://map.yahooapis.jp/"
+    // Yahoo!ジオコーダAPIのベースURL
+    private val geocoderBaseUrl = "https://map.yahooapis.jp/"
+
+    // Meteosource天気APIのベースURL
+    private val weatherBaseUrl = "https://www.meteosource.com/"
 
     private val geocoderApi: GeocoderApi by lazy {
-        RetrofitFactory.createRetrofitInstance(baseUrl).create(GeocoderApi::class.java)
+        RetrofitFactory.createRetrofitInstance(geocoderBaseUrl).create(GeocoderApi::class.java)
     }
 
     private val weatherApi: WeatherApi by lazy {
-        RetrofitFactory.createRetrofitInstance(baseUrl).create(WeatherApi::class.java)
+        RetrofitFactory.createRetrofitInstance(weatherBaseUrl).create(WeatherApi::class.java)
     }
 
     suspend fun fetchWeatherInfo(address: String): WeatherResponse? {
