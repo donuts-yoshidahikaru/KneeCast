@@ -9,11 +9,9 @@ plugins {
 android {
     namespace = "com.tutorial.kneecast"
     compileSdk = 35
-
     buildFeatures {
         buildConfig = true
     }
-
     defaultConfig {
         applicationId = "com.tutorial.kneecast"
         minSdk = 28
@@ -54,6 +52,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
+    }
 }
 
 dependencies {
@@ -66,6 +67,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    implementation("androidx.compose.runtime:runtime-livedata")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.google.code.gson:gson:2.8.9")
