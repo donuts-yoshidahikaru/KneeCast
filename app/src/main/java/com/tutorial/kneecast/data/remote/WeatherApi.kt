@@ -7,10 +7,13 @@ import retrofit2.http.Query
 import com.tutorial.kneecast.BuildConfig
 
 interface WeatherApi {
-    @GET("weather/V1/place")
+    @GET("api/v1/free/point")
     suspend fun getWeather(
-        @Query("appid") appId: String = BuildConfig.CLIENT_ID,
-        @Query("coordinates") coordinates: String,
-        @Query("output") output: String = "json"
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("sections") sections: String = "all",
+        @Query("language") language: String = "en",
+        @Query("units") units: String = "metric",
+        @Query("key") key: String = BuildConfig.METEOSOURCE_API_KEY
     ): Response<WeatherResponse>
 }
