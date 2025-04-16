@@ -35,7 +35,8 @@ fun WeatherScreen(weatherViewModel: WeatherViewModel) {
                 value = address,
                 onValueChange = { address = it },
                 label = { Text("住所を入力") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
             Button(
