@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.tutorial.kneecast.ui.WeatherScreen
+import com.tutorial.kneecast.ui.components.WeatherScreen
 import com.tutorial.kneecast.ui.viewmodel.WeatherViewModel
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +20,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Material テーマを利用した Compose UI を構築
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     WeatherScreen(weatherViewModel = weatherViewModel)
