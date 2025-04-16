@@ -44,7 +44,10 @@ class WeatherRepository {
     }
 
     private suspend fun getWeatherFromCoordinates(coordinates: String): WeatherResponse? {
-        val weatherResponse = weatherApi.getWeather(coordinates = coordinates)
+        val (lonStr, latStr) = coordinates.split(",")
+        val lon: Double = lonStr.toDouble()
+        val lat: Double = latStr.toDouble()
+        val weatherResponse = weatherApi.getWeather(lon = lon, lat = lat)
         return if (weatherResponse.isSuccessful) weatherResponse.body() else null
     }
 }
