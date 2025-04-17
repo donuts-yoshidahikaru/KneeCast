@@ -1,6 +1,7 @@
 package com.tutorial.kneecast.ui.components.currentLocationWeather
 
 import android.location.Location
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -18,7 +20,9 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.tutorial.kneecast.R
 import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.ui.components.WeatherScreen
 import com.tutorial.kneecast.ui.viewmodel.provideLocationViewModel
@@ -28,9 +32,7 @@ class CurrentLocationWeatherView {
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         Box(
-            modifier = modifier
-                .fillMaxWidth()  // 横幅全体をカバー
-                .background(Color(0xFFFFF9C4)),  // 薄い黄色の背景色
+            modifier = modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             LocationWeatherViewer(modifier = Modifier)
@@ -83,20 +85,6 @@ class CurrentLocationWeatherView {
                 )
             }
             
-            // 状態メッセージの表示
-            val statusMessage = when {
-                error != null -> "エラー: $error"
-                isLoading -> "位置情報を取得中..."
-                location != null -> "位置情報を取得しました"
-                else -> "位置情報を取得してください"
-            }
-            
-            Text(
-                text = statusMessage,
-                modifier = Modifier.padding(vertical = 8.dp),
-                color = if (error != null) Color.Red else Color.Black
-            )
-            
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.padding(8.dp)
@@ -105,7 +93,23 @@ class CurrentLocationWeatherView {
             
             // 天気情報の表示（位置情報が取得できている場合のみ）
             if (location != null) {
-                WeatherScreen(weatherViewModel = weatherViewModel)
+                if (error != null) {
+                    // エラーがある場合はエラーアイコンを表示
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_error),
+                            contentDescription = "エラー",
+                            modifier = Modifier.size(64.dp)
+                        )
+                    }
+                } else {
+                    WeatherScreen(weatherViewModel = weatherViewModel)
+                }
             }
         }
     }
