@@ -1,5 +1,6 @@
 package com.tutorial.kneecast.data.remote
 
+import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.GeocoderResponse
 import com.tutorial.kneecast.data.model.WeatherResponse
 import com.tutorial.kneecast.network.RetrofitFactory
@@ -23,13 +24,10 @@ class WeatherRepository {
         RetrofitFactory.createRetrofitInstance(weatherBaseUrl).create(WeatherApi::class.java)
     }
 
-    suspend fun fetchWeatherInfo(address: String): WeatherResponse? {
+    suspend fun fetchWeatherInfo(address: String?, coords: Coordinates?): WeatherResponse? {
         return withContext(Dispatchers.IO) {
             try {
-                // 1. ジオコーダAPI：住所から緯度・経度を取得
-                val coordinates = getCoordinatesFromAddress(address) ?: return@withContext null
-
-                // 2. 気象情報API：取得した座標から天気情報を取得
+                val coordinates = coords ?: getCoordinatesFromAddress(address) ?: return@withContext null
                 getWeatherFromCoordinates(coordinates)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -38,19 +36,18 @@ class WeatherRepository {
         }
     }
 
-    private suspend fun getCoordinatesFromAddress(address: String): String? {
+    private suspend fun getCoordinatesFromAddress(address: String?): Coordinates? {
+        if (address == null) return null
         val geoResponse = geocoderApi.getCoordinates(address = address)
         if (!geoResponse.isSuccessful) return null
 
         val geoResponseBody = geoResponse.body() ?: return null
-        return geoResponseBody.Feature[0].Geometry.Coordinates
+        val coordinates: String = geoResponseBody.Feature[0].Geometry.Coordinates
+        return Coordinates(coordinates[0].code.toDouble(), coordinates[1].code.toDouble())
     }
 
-    private suspend fun getWeatherFromCoordinates(coordinates: String): WeatherResponse? {
-        val (lonStr, latStr) = coordinates.split(",")
-        val lon: Double = lonStr.toDouble()
-        val lat: Double = latStr.toDouble()
-        val weatherResponse = weatherApi.getWeather(lon = lon, lat = lat)
+    private suspend fun getWeatherFromCoordinates(coordinates: Coordinates): WeatherResponse? {
+        val weatherResponse = weatherApi.getWeather(lon = coordinates.longitude, lat = coordinates.latitude)
         return if (weatherResponse.isSuccessful) weatherResponse.body() else null
     }
 }
