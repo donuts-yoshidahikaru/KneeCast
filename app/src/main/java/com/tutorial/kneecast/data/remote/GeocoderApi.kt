@@ -11,6 +11,7 @@ interface GeocoderApi {
     suspend fun getCoordinates(
         @Query("appid") appId: String = BuildConfig.YAHOO_CLIENT_ID,
         @Query("query") address: String,
-        @Query("output") output: String = "json"
+        @Query("output") output: String = "json",
+        @Query("al") al: Int = 2
     ): Response<GeocoderResponse>
 }
