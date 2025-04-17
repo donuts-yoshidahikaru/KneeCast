@@ -19,49 +19,53 @@ import com.tutorial.kneecast.ui.viewmodel.WeatherViewModel
 
 @Composable
 fun WeatherScreen(weatherViewModel: WeatherViewModel) {
-    var address by remember { mutableStateOf("") }
     val weatherResponse by weatherViewModel.weatherResponse.observeAsState()
     val loading by weatherViewModel.loading.observeAsState(initial = false)
     val error by weatherViewModel.error.observeAsState(initial = null)
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp)
     ) {
-        // ヘッダー部分：住所入力、ボタン、現在の天気、エラー表示など
+        // ヘッダー部分：現在の天気、エラー表示など
         item {
-            OutlinedTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = { Text("住所を入力") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = { weatherViewModel.fetchWeatherInfo(address) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("天気を取得")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
             if (loading) {
-                CircularProgressIndicator(modifier = Modifier.fillMaxWidth())
+                CircularProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
             }
             error?.let { errorMsg ->
-                Text(text = "エラー: $errorMsg", color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = "エラー: $errorMsg", 
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
             }
             weatherResponse?.let { weather ->
-                Text(
-                    text = "現在の天気: ${weather.current.summary}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "日次天気情報",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Column(modifier = Modifier.padding(top = 16.dp)) {
+                    Text(
+                        text = "現在の天気",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "天気: ${weather.current.summary}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "気温: ${weather.current.temperature}°C",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "風速: ${weather.current.wind.speed}m/s (${weather.current.wind.dir})",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "週間天気予報",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
