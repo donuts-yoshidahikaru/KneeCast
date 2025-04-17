@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.WeatherResponse
 import com.tutorial.kneecast.data.remote.WeatherRepository
 import kotlinx.coroutines.launch
@@ -26,12 +27,12 @@ class WeatherViewModel : ViewModel() {
     // WeatherRepository のインスタンス（DI などを利用する場合はそれに合わせてもよい）
     private val weatherRepository = WeatherRepository()
 
-    fun fetchWeatherInfo(address: String) {
+    fun fetchWeatherInfo(address: String?, coordinates: Coordinates?) {
         _loading.value = true
 
         viewModelScope.launch {
             try {
-                val response = weatherRepository.fetchWeatherInfo(address)
+                val response = weatherRepository.fetchWeatherInfo(address, coordinates)
                 // Repository の結果が null でなければ成功として UI に通知
                 if (response != null) {
                     _weatherResponse.postValue(response)
