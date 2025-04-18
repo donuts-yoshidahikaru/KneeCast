@@ -61,7 +61,10 @@ fun WeatherInfoPager(
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        key = { page ->
+            addresses[page].let { "${it.Name}_${it.Geometry.Coordinates}" }
+        }
     ) { page ->
         val address = addresses[page]
         AddressWeatherCard(address)
