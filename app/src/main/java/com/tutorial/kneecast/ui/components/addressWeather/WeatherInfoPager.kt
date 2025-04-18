@@ -19,48 +19,58 @@ fun WeatherInfoPager(
     currentSelectedAddress: Feature?,
     onAddressSelected: (Feature) -> Unit
 ) {
+    // ---------- ViewModel ----------
     val viewModel: AddressPagerViewModel = viewModel()
 
+    // ---------- state 同期 ----------
     LaunchedEffect(addresses, currentSelectedAddress) {
         viewModel.syncAddresses(addresses, currentSelectedAddress)
     }
-
     val uiState by viewModel.uiState.collectAsState()
 
     if (uiState.addresses.isEmpty()) return
 
+    // ---------- PagerState ----------
     val pagerState = rememberPagerState(
         initialPage = uiState.selectedIndex,
         pageCount = { uiState.addresses.size }
     )
 
+    // ---------- ViewModel → Pager ----------
     LaunchedEffect(uiState.selectedIndex) {
         if (uiState.selectedIndex != pagerState.currentPage) {
             pagerState.animateScrollToPage(uiState.selectedIndex)
         }
     }
 
-    val context = LocalContext.current
-
-    LaunchedEffect(pagerState.currentPage) {
+    // ---------- Pager → ViewModel & 親 ----------
+    LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }
             .collectLatest { page ->
                 if (page in uiState.addresses.indices) {
-                    viewModel.onPageChanged(page)
-
+                    viewModel.onPageChanged(page)           // Toast を ViewModel へ任せる
                     val address = uiState.addresses[page]
                     if (address != currentSelectedAddress) {
-                        Toast.makeText(
-                            context,
-                            "選択住所を ${address.Name} に変更",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        onAddressSelected(address)
+                        onAddressSelected(address)          // 親には依然通知
                     }
                 }
             }
     }
 
+    // ---------- UiEvent 受信 ----------
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.event.collectLatest { event ->
+            when (event) {
+                is AddressPagerViewModel.UiEvent.ShowToast ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AddressPagerViewModel.UiEvent.DebugLog ->
+                    Log.d("WeatherInfoPager", event.message)
+            }
+        }
+    }
+
+    // ---------- UI 描画 ----------
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxWidth(),
