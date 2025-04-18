@@ -44,7 +44,7 @@ fun WeatherInfoPager(
     }
 
     // ---------- Pager → ViewModel & 親 ----------
-    LaunchedEffect(pagerState) {
+    LaunchedEffect(pagerState.currentPage) {
         snapshotFlow { pagerState.currentPage }
             .collectLatest { page ->
                 if (page in uiState.addresses.indices) {
