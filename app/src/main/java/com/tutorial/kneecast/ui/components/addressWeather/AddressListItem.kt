@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.tutorial.kneecast.data.model.Feature
 import android.util.Log
+import timber.log.Timber
 
 /**
  * 候補住所のリストアイテム
@@ -64,7 +65,7 @@ fun SelectedAddressItem(
     onRemove: () -> Unit
 ) {
     // ログを追加して状態を確認
-    Log.d("SelectedAddressItem", "Address: ${address.Name}, isSelected: $isSelected")
+    Timber.tag("SelectedAddressItem").d("Address: ${address.Name}, isSelected: $isSelected")
     
     // 選択状態に応じた色とスタイルを設定 (remember を削除)
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer

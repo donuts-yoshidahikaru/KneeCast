@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.util.Log
 import android.widget.Toast
+import timber.log.Timber
 
 /**
  * 住所検索と天気表示のメイン画面
@@ -36,7 +37,7 @@ class AddressWeatherView {
         LaunchedEffect(currentSelectedAddress) {
             currentSelectedAddress?.let {
                 selectedAddressName = it.Name
-                Log.d("AddressWeatherView", "現在選択中の住所: ${it.Name}")
+                Timber.tag("AddressWeatherView").d("現在選択中の住所: ${it.Name}")
             }
         }
         
@@ -86,7 +87,8 @@ class AddressWeatherView {
                 ) {
                     items(selectedAddresses) { address ->
                         val isSelected = address == currentSelectedAddress
-                        Log.d("AddressWeatherView", "住所: ${address.Name}, 選択状態: $isSelected")
+                        Timber.tag("AddressWeatherView")
+                            .d("住所: ${address.Name}, 選択状態: $isSelected")
                         
                         SelectedAddressItem(
                             address = address,
@@ -108,7 +110,8 @@ class AddressWeatherView {
                     currentSelectedAddress = currentSelectedAddress,
                     onAddressSelected = { address -> 
                         // 天気表示のスクロールによって選択された住所を反映
-                        Log.d("AddressWeatherView", "天気表示部分から住所選択: ${address.Name}")
+                        Timber.tag("AddressWeatherView")
+                            .d("天気表示部分から住所選択: ${address.Name}")
                         viewModel.setCurrentAddress(address)
                     }
                 )
