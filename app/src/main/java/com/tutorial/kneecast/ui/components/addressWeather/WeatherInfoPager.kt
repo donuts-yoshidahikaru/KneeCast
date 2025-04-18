@@ -2,57 +2,59 @@ package com.tutorial.kneecast.ui.components.addressWeather
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.data.model.Feature
+import com.tutorial.kneecast.ui.viewmodel.AddressPagerViewModel
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WeatherInfoPager(
     addresses: List<Feature>,
     currentSelectedAddress: Feature?,
     onAddressSelected: (Feature) -> Unit
 ) {
-    if (addresses.isEmpty()) return
+    val viewModel: AddressPagerViewModel = viewModel()
 
-    val context = LocalContext.current
+    LaunchedEffect(addresses, currentSelectedAddress) {
+        viewModel.syncAddresses(addresses, currentSelectedAddress)
+    }
 
-    val currentAddress = currentSelectedAddress ?: addresses.first()
-    val initialPage = addresses.indexOf(currentAddress).coerceAtLeast(0)
+    val uiState by viewModel.uiState.collectAsState()
 
-    Log.d("WeatherInfoPager", "Current address: ${currentAddress.Name}, initialPage: $initialPage")
+    if (uiState.addresses.isEmpty()) return
 
     val pagerState = rememberPagerState(
-        initialPage = initialPage,
-        pageCount = { addresses.size }
+        initialPage = uiState.selectedIndex,
+        pageCount = { uiState.addresses.size }
     )
 
-    LaunchedEffect(currentSelectedAddress) {
-        currentSelectedAddress ?: return@LaunchedEffect
-        val index = addresses.indexOf(currentSelectedAddress)
-        if (index >= 0 && index != pagerState.currentPage) {
-            try {
-                pagerState.animateScrollToPage(index)
-                Toast.makeText(context, "表示住所を ${currentSelectedAddress.Name} に変更", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Log.e("WeatherInfoPager", "Error scrolling to page: $index", e)
-            }
+    LaunchedEffect(uiState.selectedIndex) {
+        if (uiState.selectedIndex != pagerState.currentPage) {
+            pagerState.animateScrollToPage(uiState.selectedIndex)
         }
     }
+
+    val context = LocalContext.current
 
     LaunchedEffect(pagerState.currentPage) {
         snapshotFlow { pagerState.currentPage }
             .collectLatest { page ->
-                if (page in addresses.indices) {
-                    val address = addresses[page]
+                if (page in uiState.addresses.indices) {
+                    viewModel.onPageChanged(page)
+
+                    val address = uiState.addresses[page]
                     if (address != currentSelectedAddress) {
-                        Toast.makeText(context, "選択住所を ${address.Name} に変更", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "選択住所を ${address.Name} に変更",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         onAddressSelected(address)
                     }
                 }
@@ -62,11 +64,8 @@ fun WeatherInfoPager(
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxWidth(),
-        key = { page ->
-            addresses[page].let { "${it.Name}_${it.Geometry.Coordinates}" }
-        }
+        key = { page -> uiState.addresses[page].let { "${it.Name}_${it.Geometry.Coordinates}" } }
     ) { page ->
-        val address = addresses[page]
-        AddressWeatherCard(address)
+        AddressWeatherCard(uiState.addresses[page])
     }
 }
