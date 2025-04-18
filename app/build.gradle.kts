@@ -78,6 +78,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
 
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)
