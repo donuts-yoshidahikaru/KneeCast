@@ -1,15 +1,12 @@
 package com.tutorial.kneecast.ui.components.addressWeather
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import com.tutorial.kneecast.data.mapper.toCoordinates
 import com.tutorial.kneecast.data.model.Feature
 
 @Composable
 fun AddressWeatherCard(address: Feature) {
-    val (lngStr, latStr) = address.Geometry.Coordinates.split(",").map { it.trim() } + listOf("", "")
-    val longitude = lngStr.toDoubleOrNull()
-    val latitude = latStr.toDoubleOrNull()
-
-    if (longitude != null && latitude != null) {
-        WeatherDisplay(address.Name, longitude, latitude)
-    }
+    val coordinates = remember(address) { address.toCoordinates() } ?: return
+    WeatherDisplay(address.Name, coordinates.longitude, coordinates.latitude)
 }
