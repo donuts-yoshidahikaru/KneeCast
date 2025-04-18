@@ -103,7 +103,7 @@ class AddressWeatherView {
                 // 天気情報表示（横スクロールページャー）
                 Spacer(modifier = Modifier.height(24.dp))
                 // 全ての選択済み住所と現在選択中の住所を渡す
-                WeatherInfoContent(
+                WeatherInfoPager(
                     addresses = selectedAddresses, 
                     currentSelectedAddress = currentSelectedAddress,
                     onAddressSelected = { address -> 
