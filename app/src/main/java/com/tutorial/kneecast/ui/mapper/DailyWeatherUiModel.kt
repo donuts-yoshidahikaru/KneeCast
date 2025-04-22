@@ -1,8 +1,8 @@
 package com.tutorial.kneecast.ui.mapper
 
 import com.tutorial.kneecast.data.model.DailyData
-import com.tutorial.kneecast.ui.util.DateFormatter
-import com.tutorial.kneecast.ui.util.WeatherIconMapper
+import com.tutorial.kneecast.ui.unit.DateFormatter
+import com.tutorial.kneecast.ui.unit.WeatherIconMapper
 
 /**
  * UI表示用のデータモデル

@@ -9,7 +9,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import com.tutorial.kneecast.app.AppInitializer
-import com.tutorial.kneecast.location.GPSLocationManager
 import com.tutorial.kneecast.ui.LocalAppContext
 import com.tutorial.kneecast.ui.LocalAppInitializer
 import com.tutorial.kneecast.ui.components.MainScreen
@@ -58,21 +57,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-    
-    /**
-     * 位置情報コールバックを設定
-     * 互換性のために残し、AppInitializerに委譲
-     */
-    fun setLocationCallback(callback: GPSLocationManager.MyLocationCallback) {
-        appInitializer.setLocationCallback(callback)
-    }
-    
-    /**
-     * 位置情報のパーミッションをリクエスト
-     * 互換性のために残し、AppInitializerに委譲
-     */
-    fun requestLocationPermissions() {
-        appInitializer.requestLocationPermissions()
     }
 }

@@ -1,11 +1,9 @@
 package com.tutorial.kneecast.data.remote
 
-import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.GeocoderResponse
 import com.tutorial.kneecast.network.RetrofitFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import retrofit2.Response
 
 class GeocodeRepository {
 

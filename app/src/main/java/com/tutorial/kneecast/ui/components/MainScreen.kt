@@ -1,6 +1,5 @@
-package com.tutorial.kneecast.ui.components;
+package com.tutorial.kneecast.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth

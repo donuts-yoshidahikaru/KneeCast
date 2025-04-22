@@ -1,7 +1,5 @@
 package com.tutorial.kneecast.app
 
-import android.app.Activity
-import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,13 +63,6 @@ class AppInitializer(private val activity: ComponentActivity) {
      */
     private fun initializeLocationRepository() {
         locationRepository = LocationRepository(activity)
-    }
-    
-    /**
-     * パーミッションランチャーを取得
-     */
-    fun getPermissionLauncher(): ActivityResultLauncher<Array<String>> {
-        return permissionLauncher
     }
     
     /**

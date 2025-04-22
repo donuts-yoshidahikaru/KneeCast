@@ -2,12 +2,10 @@ package com.tutorial.kneecast.data.remote
 
 import android.util.Log
 import com.tutorial.kneecast.data.model.Coordinates
-import com.tutorial.kneecast.data.model.GeocoderResponse
 import com.tutorial.kneecast.data.model.WeatherResponse
 import com.tutorial.kneecast.network.RetrofitFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import retrofit2.Response
 
 class WeatherRepository {
 
@@ -33,7 +31,7 @@ class WeatherRepository {
     private val weatherCache = mutableMapOf<String, CachedWeatherInfo>()
     
     // キャッシュ有効期間（10分 = 10 * 60 * 1000ミリ秒）
-    private val CACHE_EXPIRATION_MS = 10 * 60 * 1000L
+    private val cacheExpirationMs = 10 * 60 * 1000L
     
     // キャッシュデータを格納するデータクラス
     private data class CachedWeatherInfo(
@@ -61,7 +59,7 @@ class WeatherRepository {
                 val now = System.currentTimeMillis()
                 
                 // キャッシュが有効な場合はキャッシュからデータを返す
-                if (cachedInfo != null && (now - cachedInfo.timestamp) < CACHE_EXPIRATION_MS) {
+                if (cachedInfo != null && (now - cachedInfo.timestamp) < cacheExpirationMs) {
                     Log.d(TAG, "キャッシュヒット: $cacheKey からデータを取得します")
                     return@withContext cachedInfo.weatherData
                 }
@@ -100,20 +98,5 @@ class WeatherRepository {
     private suspend fun getWeatherFromCoordinates(coordinates: Coordinates): WeatherResponse? {
         val weatherResponse = weatherApi.getWeather(lon = coordinates.longitude, lat = coordinates.latitude)
         return if (weatherResponse.isSuccessful) weatherResponse.body() else null
-    }
-    
-    // キャッシュをクリアするメソッド（必要に応じて呼び出し）
-    fun clearCache() {
-        weatherCache.clear()
-    }
-    
-    // 期限切れのキャッシュをクリアするメソッド
-    fun clearExpiredCache() {
-        val now = System.currentTimeMillis()
-        val expiredKeys = weatherCache.entries
-            .filter { (now - it.value.timestamp) >= CACHE_EXPIRATION_MS }
-            .map { it.key }
-        
-        expiredKeys.forEach { weatherCache.remove(it) }
     }
 }

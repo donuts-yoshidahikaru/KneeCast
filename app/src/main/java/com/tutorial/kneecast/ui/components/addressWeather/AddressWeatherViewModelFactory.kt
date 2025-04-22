@@ -1,4 +1,4 @@
-package com.tutorial.kneecast.ui.components.addressWeather;
+package com.tutorial.kneecast.ui.components.addressWeather
 
 import androidx.lifecycle.ViewModelProvider
 import com.tutorial.kneecast.ui.viewmodel.WeatherViewModel

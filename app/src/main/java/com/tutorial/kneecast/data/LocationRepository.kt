@@ -1,7 +1,6 @@
 package com.tutorial.kneecast.data
 
 import android.content.Context
-import android.location.Location
 import com.tutorial.kneecast.MainActivity
 import com.tutorial.kneecast.location.GPSLocationManager
 import com.tutorial.kneecast.permissions.PermissionHandler
@@ -55,15 +54,6 @@ class LocationRepository(private val context: Context) {
     /**
      * 位置情報を取得
      */
-    fun getLocation() {
-        locationCallback?.let { callback ->
-            if (permissionHandler?.hasLocationPermissions() == true) {
-                requestLocationUpdates(callback)
-            } else {
-                requestLocationPermissions()
-            }
-        }
-    }
     
     /**
      * 位置情報の更新をリクエスト

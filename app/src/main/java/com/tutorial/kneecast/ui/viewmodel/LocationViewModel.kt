@@ -70,19 +70,7 @@ class LocationViewModel : ViewModel() {
         _loading.value = true
         appInitializer.requestLocationPermissions()
     }
-    
-    /**
-     * 位置情報のパーミッションをリクエスト
-     */
-    fun requestLocationPermissions() {
-        if (!initialized) {
-            _error.value = "ViewModelが初期化されていません"
-            return
-        }
-        
-        _loading.value = true
-        appInitializer.requestLocationPermissions()
-    }
+
     
     /**
      * エラーメッセージをクリア

@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
-import android.util.Log
 import android.widget.Toast
 import timber.log.Timber
 
