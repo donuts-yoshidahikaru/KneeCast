@@ -53,5 +53,3 @@ app/
 ![Image](https://github.com/user-attachments/assets/4ff19357-5dfa-46cf-8cdb-db4985446ba5)
 - 住所検索画面：場所を検索して追加
 ![Image](https://github.com/user-attachments/assets/3deca028-8d56-466c-8cb5-a38f3fb56aa8)
-
-
