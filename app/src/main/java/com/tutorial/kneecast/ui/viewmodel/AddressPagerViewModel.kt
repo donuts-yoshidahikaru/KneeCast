@@ -26,7 +26,6 @@ class AddressPagerViewModel : ViewModel() {
 
     sealed interface UiEvent {
         data class ShowToast(val message: String) : UiEvent
-        data class DebugLog(val message: String) : UiEvent
     }
 
     private val _event = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
@@ -46,7 +45,7 @@ class AddressPagerViewModel : ViewModel() {
 
         if (addresses != oldState.addresses || newIndex != oldState.selectedIndex) {
             _uiState.value = UiState(addresses, newIndex)
-            postEvent(UiEvent.DebugLog("表示住所を ${addresses[newIndex].Name} に変更"))
+            Timber.d("表示住所を ${addresses[newIndex].Name} に変更")
             postEvent(UiEvent.ShowToast("表示住所を ${addresses[newIndex].Name} に変更"))
         }
     }
@@ -56,16 +55,13 @@ class AddressPagerViewModel : ViewModel() {
 
         _uiState.update { it.copy(selectedIndex = newIndex) }
         val name = _uiState.value.addresses[newIndex].Name
-        postEvent(UiEvent.DebugLog("選択住所を $name に変更"))
+        Timber.d("選択住所を $name に変更")
         postEvent(UiEvent.ShowToast("選択住所を $name に変更"))
     }
 
     private fun postEvent(event: UiEvent) {
         viewModelScope.launch {
             _event.emit(event)
-            if (event is UiEvent.DebugLog && BuildConfig.DEBUG) {
-                Timber.d(event.message)
-            }
         }
     }
 }

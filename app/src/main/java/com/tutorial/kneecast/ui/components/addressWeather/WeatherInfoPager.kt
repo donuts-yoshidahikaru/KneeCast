@@ -1,6 +1,5 @@
 package com.tutorial.kneecast.ui.components.addressWeather
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
@@ -64,8 +63,6 @@ fun WeatherInfoPager(
             when (event) {
                 is AddressPagerViewModel.UiEvent.ShowToast ->
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                is AddressPagerViewModel.UiEvent.DebugLog ->
-                    Log.d("WeatherInfoPager", event.message)
             }
         }
     }
