@@ -79,7 +79,6 @@ class WeatherRepository {
                 weatherResponse
             } catch (e: Exception) {
                 Log.e(TAG, "データ取得エラー", e)
-                e.printStackTrace()
                 null
             }
         }
