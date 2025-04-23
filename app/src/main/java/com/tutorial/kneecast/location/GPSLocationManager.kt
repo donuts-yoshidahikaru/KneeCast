@@ -5,17 +5,15 @@ import android.content.Context
 import android.location.Location
 import com.google.android.gms.location.*
 
-@Suppress("DEPRECATION")
 class GPSLocationManager(context: Context) {
 
     private var fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
-    private val locationRequest = LocationRequest.create().apply {
-        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        numUpdates = 1  // 一回のみ更新を受け取る
-        interval = 0    // できるだけ早く
-    }
+    private val locationRequest = LocationRequest.Builder(10000)
+        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+        .setMinUpdateIntervalMillis(0)
+        .build()
     
     private var locationCallback: LocationCallback? = null
 
