@@ -62,7 +62,16 @@ class AppInitializer(private val activity: ComponentActivity) {
      * 位置情報リポジトリを初期化
      */
     private fun initializeLocationRepository() {
-        locationRepository = LocationRepository(activity)
+        // thisを渡してAppInitializerのインスタンスを提供
+        locationRepository = LocationRepository(activity, this)
+    }
+    
+    /**
+     * パーミッションハンドラーを取得
+     * LocationRepositoryがパーミッションリクエストに使用
+     */
+    fun getPermissionHandler(): PermissionHandler {
+        return permissionHandler
     }
     
     /**
