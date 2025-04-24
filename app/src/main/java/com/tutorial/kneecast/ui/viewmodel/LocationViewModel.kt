@@ -45,13 +45,18 @@ class LocationViewModel : ViewModel() {
         appInitializer.setLocationCallback(object : GPSLocationManager.MyLocationCallback {
             override fun onLocationResult(location: Location?) {
                 _loading.postValue(false)
-                _location.postValue(location)
-                _error.postValue(null)
+                if (location != null) {
+                    _location.postValue(location)
+                    _error.postValue(null)
+                } else {
+                    _error.postValue("位置情報を取得できませんでした")
+                }
             }
             
             override fun onLocationError(error: String) {
                 _loading.postValue(false)
                 _error.postValue(error)
+                _location.postValue(null)
             }
         })
         
@@ -68,9 +73,9 @@ class LocationViewModel : ViewModel() {
         }
         
         _loading.value = true
+        _error.value = null
         appInitializer.requestLocationPermissions()
     }
-
     
     /**
      * エラーメッセージをクリア

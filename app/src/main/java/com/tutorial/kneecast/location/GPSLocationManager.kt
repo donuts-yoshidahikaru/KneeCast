@@ -13,6 +13,7 @@ class GPSLocationManager(context: Context) {
     private val locationRequest = LocationRequest.Builder(10000)
         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
         .setMinUpdateIntervalMillis(0)
+        .setMaxUpdates(1)  // 1回だけ更新を受け取る
         .build()
     
     private var locationCallback: LocationCallback? = null
@@ -38,7 +39,7 @@ class GPSLocationManager(context: Context) {
                     requestSingleUpdate(callback)
                 }
             }
-            .addOnFailureListener { 
+            .addOnFailureListener { e -> 
                 // エラーの場合も新しく取得
                 requestSingleUpdate(callback)
             }
@@ -61,14 +62,30 @@ class GPSLocationManager(context: Context) {
                     callback.onLocationError("位置情報を取得できませんでした")
                 }
             }
+
+            override fun onLocationAvailability(locationAvailability: LocationAvailability) {
+                super.onLocationAvailability(locationAvailability)
+                if (!locationAvailability.isLocationAvailable) {
+                    removeLocationUpdates()
+                    callback.onLocationError("位置情報サービスが利用できません")
+                }
+            }
         }
         
-        // 位置情報の更新をリクエスト（一度だけ）
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback as LocationCallback,
-            null
-        )
+        try {
+            // 位置情報の更新をリクエスト（一度だけ）
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback as LocationCallback,
+                null
+            ).addOnFailureListener { e ->
+                removeLocationUpdates()
+                callback.onLocationError("位置情報の取得に失敗しました: ${e.localizedMessage}")
+            }
+        } catch (e: Exception) {
+            removeLocationUpdates()
+            callback.onLocationError("位置情報の取得に失敗しました: ${e.localizedMessage}")
+        }
     }
     
     private fun removeLocationUpdates() {
