@@ -21,6 +21,15 @@ interface SavedAddressDao {
     @Delete
     suspend fun deleteAddress(address: SavedAddress)
     
+    @Query("DELETE FROM saved_addresses WHERE address_name = :addressName")
+    suspend fun deleteAddressByName(addressName: String)
+    
+    @Query("SELECT * FROM saved_addresses WHERE address_name = :addressName LIMIT 1")
+    suspend fun findAddressByName(addressName: String): SavedAddress?
+    
+    @Query("SELECT * FROM saved_addresses WHERE address_name = :addressName AND latitude = :latitude AND longitude = :longitude LIMIT 1")
+    suspend fun findAddressByNameAndCoordinates(addressName: String, latitude: Double, longitude: Double): SavedAddress?
+    
     @Query("UPDATE saved_addresses SET is_selected = CASE WHEN id = :addressId THEN 1 ELSE 0 END")
     suspend fun updateSelectedAddress(addressId: Long)
     

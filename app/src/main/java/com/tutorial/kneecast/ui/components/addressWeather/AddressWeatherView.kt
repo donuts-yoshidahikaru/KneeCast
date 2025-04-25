@@ -13,7 +13,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.widget.Toast
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
+import com.tutorial.kneecast.data.repository.Factory.SavedAddressRepositoryFactory
+import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModelFactory
 import timber.log.Timber
 
 /**
@@ -23,12 +26,33 @@ class AddressWeatherView {
     @Composable
     fun Content(modifier: Modifier = Modifier) {
         val context = LocalContext.current
-        val viewModel: AddressWeatherViewModel = viewModel()
+        
+        // SavedAddressRepositoryを初期化
+        val savedAddressRepository = remember { 
+            SavedAddressRepositoryFactory.create(context) 
+        }
+        
+        // ViewModelを初期化（ファクトリを使用）
+        val viewModel: AddressWeatherViewModel = viewModel(
+            factory = AddressWeatherViewModelFactory(savedAddressRepository)
+        )
+        
+        // StateFlowをStateとして収集
         val addressInput by viewModel.addressInput.collectAsState()
         val suggestions by viewModel.addressSuggestions.collectAsState()
         val selectedAddresses by viewModel.selectedAddresses.collectAsState()
         val currentSelectedAddress by viewModel.currentSelectedAddress.collectAsState()
         val isLoading by viewModel.isLoading.collectAsState()
+        val error by viewModel.error.collectAsState()
+        
+        // エラーメッセージの表示
+        LaunchedEffect(error) {
+            error?.let { errorMessage ->
+                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                // エラーメッセージを表示したらクリア
+                viewModel.clearError()
+            }
+        }
         
         // UI側で選択中の住所を追跡（デバッグ用）
         var selectedAddressName by remember { mutableStateOf("") }
@@ -96,7 +120,8 @@ class AddressWeatherView {
                             isSelected = isSelected,
                             onClick = { 
                                 viewModel.setCurrentAddress(address)
-                                Toast.makeText(context, "${address.Name}を選択しました", Toast.LENGTH_SHORT).show()
+                                // 頻繁な操作でのToastを避けるためコメントアウト
+                                // Toast.makeText(context, "${address.Name}を選択しました", Toast.LENGTH_SHORT).show()
                             },
                             onRemove = { viewModel.removeAddress(address) }
                         )
@@ -115,6 +140,14 @@ class AddressWeatherView {
                             .d("天気表示部分から住所選択: ${address.Name}")
                         viewModel.setCurrentAddress(address)
                     }
+                )
+            } else if (!isLoading) {
+                // 住所が登録されていない場合のメッセージ
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "住所を検索して登録してください",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
         }

@@ -11,15 +11,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.ui.components.WeatherScreen
 import com.tutorial.kneecast.ui.viewmodel.WeatherViewModel
+import com.tutorial.kneecast.ui.viewmodel.WeatherViewModelFactory
 
-/**
- * ❸ 天気情報表示コンポーネント（元の WeatherDisplay と同一）
- */
 @Composable
 fun WeatherDisplay(addressName: String, longitude: Double, latitude: Double) {
 
     val viewModelStoreOwner = LocalViewModelStoreOwner.current ?: return
-    val factory = remember { AddressWeatherViewModelFactory() }
+    val factory = remember { WeatherViewModelFactory() }
 
     val weatherViewModel: WeatherViewModel = viewModel(
         viewModelStoreOwner = viewModelStoreOwner,
