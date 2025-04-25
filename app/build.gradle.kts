@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.androidTest
 import java.util.Properties
 
 plugins {
@@ -32,6 +33,23 @@ android {
 
         buildConfigField("String", "YAHOO_CLIENT_ID", "\"${localProperties["YAHOO_CLIENT_ID"]}\"")
         buildConfigField("String", "METEOSOURCE_API_KEY", "\"${localProperties["METEOSOURCE_API_KEY"]}\"")
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += mapOf(
+                    "room.schemaLocation" to "$projectDir/schemas",
+                    "room.incremental" to "true",
+                    "room.expandProjection" to "true"
+                )
+            }
+        }
+        sourceSets {
+            getByName("androidTest") {
+                assets {
+                    srcDir("$projectDir/schemas")
+                }
+            }
+        }
     }
 
     buildTypes {
