@@ -50,7 +50,7 @@ fun DailyWeatherCard(
                     }
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopStart)
             )

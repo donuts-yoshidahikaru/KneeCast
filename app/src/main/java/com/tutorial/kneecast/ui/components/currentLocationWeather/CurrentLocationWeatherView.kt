@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tutorial.kneecast.R
 import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.ui.components.WeatherScreen
@@ -79,6 +80,7 @@ class CurrentLocationWeatherView {
             ) {
                 Text(
                     text = "現在地の天気を取得",
+                    fontSize = 16.sp
                 )
             }
             

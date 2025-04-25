@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.widget.Toast
+import androidx.compose.ui.unit.sp
 import timber.log.Timber
 
 /**
@@ -50,7 +51,8 @@ class AddressWeatherView {
                 onValueChange = { viewModel.updateAddressInput(it) },
                 label = { Text("住所を入力") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
             )
             
             // 読み込み中インジケータ

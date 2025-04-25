@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tutorial.kneecast.data.model.Feature
 import timber.log.Timber
 
@@ -45,7 +46,8 @@ fun SuggestionItem(suggestion: Feature, onClick: () -> Unit) {
             )
             Text(
                 text = suggestion.Name,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 16.sp
             )
         }
     }
@@ -98,7 +100,8 @@ fun SelectedAddressItem(
                 Text(
                     text = address.Name,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = textColor
+                    color = textColor,
+                    fontSize = 16.sp
                 )
                 
                 Spacer(modifier = Modifier.width(8.dp))
