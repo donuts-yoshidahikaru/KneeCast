@@ -48,8 +48,8 @@ app/
 
 ## スクリーンショット
 
-アプリの主要画面：
-- メイン画面：現在地の天気表示
-![Image](https://github.com/user-attachments/assets/4ff19357-5dfa-46cf-8cdb-db4985446ba5)
-- 住所検索画面：場所を検索して追加
-![Image](https://github.com/user-attachments/assets/3deca028-8d56-466c-8cb5-a38f3fb56aa8)
+### メイン画面：現在地の天気表示
+![Screenshot_20250425_101305](https://github.com/user-attachments/assets/72e6124d-3c8c-4b2c-8a4f-855313339b85)
+
+### 住所検索画面：場所を検索して追加
+![Screenshot_20250425_101512](https://github.com/user-attachments/assets/7168d9b6-b366-480a-916d-77f63f95f2f2)
