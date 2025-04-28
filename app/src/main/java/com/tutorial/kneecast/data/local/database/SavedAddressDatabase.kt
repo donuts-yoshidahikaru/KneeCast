@@ -20,7 +20,7 @@ abstract class SavedAddressDatabase : RoomDatabase() {
         
         @Volatile
         private var INSTANCE: SavedAddressDatabase? = null
-        
+
         fun getInstance(context: Context): SavedAddressDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -28,7 +28,7 @@ abstract class SavedAddressDatabase : RoomDatabase() {
                     SavedAddressDatabase::class.java,
                     DATABASE_NAME
                 )
-                .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                 .build()
                 INSTANCE = instance
                 instance

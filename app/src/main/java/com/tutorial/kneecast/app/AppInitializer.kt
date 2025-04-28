@@ -1,5 +1,6 @@
 package com.tutorial.kneecast.app
 
+import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,6 +37,7 @@ class AppInitializer(private val activity: ComponentActivity) {
     /**
      * パーミッションランチャーを初期化
      */
+    @SuppressLint("InvalidFragmentVersionForActivityResult")
     private fun initializePermissionLauncher() {
         permissionLauncher = activity.registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()

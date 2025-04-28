@@ -8,5 +8,5 @@ import com.tutorial.kneecast.data.model.Feature
 @Composable
 fun AddressWeatherCard(address: Feature) {
     val coordinates = remember(address) { address.toCoordinates() } ?: return
-    WeatherDisplay(address.Name, coordinates.longitude, coordinates.latitude)
+    WeatherDisplay(address.name, coordinates.longitude, coordinates.latitude)
 }

@@ -1,8 +1,9 @@
-package com.tutorial.kneecast.ui.viewmodel
+package com.tutorial.kneecast.ui.components.addressWeather
     
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.tutorial.kneecast.data.repository.SavedAddressRepository
+import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 
 class AddressWeatherViewModelFactory(
     private val savedAddressRepository: SavedAddressRepository

@@ -20,17 +20,17 @@ class SavedAddressRepository(
 
     suspend fun saveAddress(feature: Feature, isSelected: Boolean = false): Long {
         // 住所名と座標から既存の住所を検索
-        val (longitude, latitude) = feature.Geometry.Coordinates
+        val (longitude, latitude) = feature.geometry.coordinates
             .split(",")
             .map { it.trim().toDouble() }
             
         val existingAddress = savedAddressDao.findAddressByNameAndCoordinates(
-            feature.Name, latitude, longitude
+            feature.name, latitude, longitude
         )
         
         // 既存の住所が見つかった場合は、それを更新
         if (existingAddress != null) {
-            Timber.d("既存の住所を更新: ${feature.Name}")
+            Timber.d("既存の住所を更新: ${feature.name}")
             val updatedAddress = existingAddress.copy(isSelected = isSelected)
             val id = savedAddressDao.insertAddress(updatedAddress)
             
@@ -42,7 +42,7 @@ class SavedAddressRepository(
         }
         
         // 新規住所の保存
-        Timber.d("新規住所を保存: ${feature.Name}")
+        Timber.d("新規住所を保存: ${feature.name}")
         val savedAddress = AddressMapper.fromFeature(feature, isSelected)
         val id = savedAddressDao.insertAddress(savedAddress)
         
@@ -56,10 +56,10 @@ class SavedAddressRepository(
     suspend fun deleteAddress(feature: Feature) {
         try {
             // 住所名で削除
-            Timber.d("住所を削除: ${feature.Name}")
-            savedAddressDao.deleteAddressByName(feature.Name)
+            Timber.d("住所を削除: ${feature.name}")
+            savedAddressDao.deleteAddressByName(feature.name)
         } catch (e: Exception) {
-            Timber.e(e, "住所の削除に失敗: ${feature.Name}")
+            Timber.e(e, "住所の削除に失敗: ${feature.name}")
             throw e
         }
     }
@@ -69,7 +69,7 @@ class SavedAddressRepository(
             val savedAddress = AddressMapper.fromFeature(feature, true)
             
             // 既存の住所を検索
-            val existingAddress = savedAddressDao.findAddressByName(feature.Name)
+            val existingAddress = savedAddressDao.findAddressByName(feature.name)
             
             val id = if (existingAddress != null) {
                 // 既存の住所を更新
@@ -82,12 +82,12 @@ class SavedAddressRepository(
             
             savedAddressDao.updateSelectedAddress(id)
         } catch (e: Exception) {
-            Timber.e(e, "選択住所の更新に失敗: ${feature.Name}")
+            Timber.e(e, "選択住所の更新に失敗: ${feature.name}")
             throw e
         }
     }
 
-    suspend fun getAddressCount(): Int {
-        return savedAddressDao.getAddressCount()
-    }
+//    suspend fun getAddressCount(): Int {
+//        return savedAddressDao.getAddressCount()
+//    }
 }

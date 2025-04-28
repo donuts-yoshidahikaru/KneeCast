@@ -2,7 +2,6 @@ package com.tutorial.kneecast.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tutorial.kneecast.BuildConfig
 import com.tutorial.kneecast.data.model.Feature
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,9 +44,9 @@ class AddressPagerViewModel : ViewModel() {
 
         if (addresses != oldState.addresses || newIndex != oldState.selectedIndex) {
             _uiState.value = UiState(addresses, newIndex)
-            Timber.d("表示住所を ${addresses[newIndex].Name} に変更")
+            Timber.d("表示住所を ${addresses[newIndex].name} に変更")
             if (oldState.addresses.isNotEmpty()) {
-                postEvent(UiEvent.ShowToast("表示住所を ${addresses[newIndex].Name} に変更"))
+                postEvent(UiEvent.ShowToast("表示住所を ${addresses[newIndex].name} に変更"))
             }
         }
     }
@@ -56,7 +55,7 @@ class AddressPagerViewModel : ViewModel() {
         if (newIndex == _uiState.value.selectedIndex) return
 
         _uiState.update { it.copy(selectedIndex = newIndex) }
-        val name = _uiState.value.addresses[newIndex].Name
+        val name = _uiState.value.addresses[newIndex].name
         Timber.d("選択住所を $name に変更")
     }
 

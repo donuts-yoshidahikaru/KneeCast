@@ -1,4 +1,4 @@
-package com.tutorial.kneecast.data.repository.Factory
+package com.tutorial.kneecast.data.repository.factory
 
 import android.content.Context
 import com.tutorial.kneecast.data.repository.SavedAddressRepository

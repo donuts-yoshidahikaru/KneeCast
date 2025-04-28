@@ -1,12 +1,10 @@
 package com.tutorial.kneecast.ui.components.addressWeather
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.ui.viewmodel.AddressPagerViewModel
@@ -51,7 +49,7 @@ fun WeatherInfoPager(
                     viewModel.onPageChanged(page)           // Toast を ViewModel へ任せる
                     val address = uiState.addresses[page]
                     if (address != currentSelectedAddress) {
-                        Timber.tag("WeatherInfoPager").d("ページャーで住所を選択: ${address.Name}")
+                        Timber.tag("WeatherInfoPager").d("ページャーで住所を選択: ${address.name}")
                         onAddressSelected(address)          // 親には依然通知
                     }
                 }
@@ -59,7 +57,6 @@ fun WeatherInfoPager(
     }
 
     // UiEvent 受信
-    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.event.collectLatest { event ->
             when (event) {
@@ -76,7 +73,7 @@ fun WeatherInfoPager(
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxWidth(),
-        key = { page -> "$page-${uiState.addresses[page].let { "${it.Name}_${it.Geometry.Coordinates}" }}" }
+        key = { page -> "$page-${uiState.addresses[page].let { "${it.name}_${it.geometry.coordinates}" }}" }
     ) { page ->
         AddressWeatherCard(uiState.addresses[page])
     }

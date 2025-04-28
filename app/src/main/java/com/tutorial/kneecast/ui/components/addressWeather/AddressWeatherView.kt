@@ -13,10 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.widget.Toast
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
-import com.tutorial.kneecast.data.repository.Factory.SavedAddressRepositoryFactory
-import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModelFactory
+import com.tutorial.kneecast.data.repository.factory.SavedAddressRepositoryFactory
 import timber.log.Timber
 
 /**
@@ -60,8 +58,8 @@ class AddressWeatherView {
         // 現在選択中の住所が変わったらローカル状態も更新
         LaunchedEffect(currentSelectedAddress) {
             currentSelectedAddress?.let {
-                selectedAddressName = it.Name
-                Timber.tag("AddressWeatherView").d("現在選択中の住所: ${it.Name}")
+                selectedAddressName = it.name
+                Timber.tag("AddressWeatherView").d("現在選択中の住所: ${it.name}")
             }
         }
         
@@ -113,7 +111,7 @@ class AddressWeatherView {
                     items(selectedAddresses) { address ->
                         val isSelected = address == currentSelectedAddress
                         Timber.tag("AddressWeatherView")
-                            .d("住所: ${address.Name}, 選択状態: $isSelected")
+                            .d("住所: ${address.name}, 選択状態: $isSelected")
                         
                         SelectedAddressItem(
                             address = address,
@@ -137,7 +135,7 @@ class AddressWeatherView {
                     onAddressSelected = { address -> 
                         // 天気表示のスクロールによって選択された住所を反映
                         Timber.tag("AddressWeatherView")
-                            .d("天気表示部分から住所選択: ${address.Name}")
+                            .d("天気表示部分から住所選択: ${address.name}")
                         viewModel.setCurrentAddress(address)
                     }
                 )

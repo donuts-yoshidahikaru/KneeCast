@@ -19,9 +19,9 @@ data class DailyWeatherUiModel(
  */
 fun DailyData.toUiModel(): DailyWeatherUiModel {
     val date = DateFormatter.format(day)
-    val icon = WeatherIconMapper.mapIconCode(all_day.icon)
-    val maxText = "${all_day.temperature_max}°C"
-    val minText = "${all_day.temperature_min}°C"
+    val icon = WeatherIconMapper.mapIconCode(allDay.icon)
+    val maxText = "${allDay.temperatureMax}°C"
+    val minText = "${allDay.temperatureMin}°C"
 
     return DailyWeatherUiModel(
         displayDate = date,

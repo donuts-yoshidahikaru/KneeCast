@@ -45,7 +45,7 @@ class LocationRepository(private val context: Context, private val appInitialize
                     }
                 }
                 
-                override fun onPermissionDenied(deniedPermissions: List<String>) {
+                override fun onPermissionDenied() {
                     locationCallback?.onLocationError("位置情報の許可が必要です。設定から許可してください。")
                 }
             })
@@ -57,7 +57,7 @@ class LocationRepository(private val context: Context, private val appInitialize
                     }
                 }
                 
-                override fun onPermissionDenied(deniedPermissions: List<String>) {
+                override fun onPermissionDenied() {
                     locationCallback?.onLocationError("位置情報の許可が必要です。設定から許可してください。")
                 }
             })

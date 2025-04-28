@@ -33,12 +33,12 @@ class CurrentLocationWeatherView {
             modifier = modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            LocationWeatherViewer(modifier = Modifier)
+            LocationWeatherViewer()
         }
     }
     
     @Composable
-    fun LocationWeatherViewer(modifier: Modifier = Modifier) {
+    fun LocationWeatherViewer() {
         // LocationViewModelとWeatherViewModelを取得
         val locationViewModel = provideLocationViewModel()
         val weatherViewModel = provideWeatherViewModel()

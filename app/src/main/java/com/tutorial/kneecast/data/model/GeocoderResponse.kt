@@ -1,18 +1,23 @@
 package com.tutorial.kneecast.data.model
 
+import com.google.gson.annotations.SerializedName
+
+//@Suppress("UNUSED_PARAMETER")
 data class GeocoderResponse(
-    val ResultInfo: ResultInfo,
-    val Feature: List<Feature>
+    @SerializedName("ResultInfo") val resultInfo: ResultInfo,
+    @SerializedName("Feature") val feature: List<Feature>
 )
 
+//@Suppress("unused")
 data class ResultInfo(
-    val count: Int
+    @SerializedName("count") val count: Int
 )
+
 data class Feature(
-    val Geometry: Geometry,
-    val Name: String
+    @SerializedName("Geometry") val geometry: Geometry,
+    @SerializedName("Name") val name: String
 )
 
 data class Geometry(
-    val Coordinates: String
+    @SerializedName("Coordinates") val coordinates: String
 )

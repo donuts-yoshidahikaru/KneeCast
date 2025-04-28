@@ -6,6 +6,7 @@ import retrofit2.http.Query
 import com.tutorial.kneecast.BuildConfig
 import com.tutorial.kneecast.data.model.GeocoderResponse
 
+//@Suppress("unused")
 interface GeocoderApi {
     @GET("geocode/V1/geoCoder")
     suspend fun getCoordinates(

@@ -1,6 +1,5 @@
 package com.tutorial.kneecast.ui.viewmodel
 
-import android.content.Context
 import android.location.Location
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -33,10 +32,9 @@ class LocationViewModel : ViewModel() {
     
     /**
      * ViewModelの初期化
-     * @param context アプリケーションコンテキスト
      * @param appInitializer アプリケーション初期化クラス
      */
-    fun initialize(context: Context, appInitializer: AppInitializer) {
+    fun initialize(appInitializer: AppInitializer) {
         if (initialized) return
         
         this.appInitializer = appInitializer

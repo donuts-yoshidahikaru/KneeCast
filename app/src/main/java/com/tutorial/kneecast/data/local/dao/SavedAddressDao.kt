@@ -1,7 +1,6 @@
 package com.tutorial.kneecast.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -18,9 +17,6 @@ interface SavedAddressDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAddress(address: SavedAddress): Long
     
-    @Delete
-    suspend fun deleteAddress(address: SavedAddress)
-    
     @Query("DELETE FROM saved_addresses WHERE address_name = :addressName")
     suspend fun deleteAddressByName(addressName: String)
     
@@ -32,10 +28,4 @@ interface SavedAddressDao {
     
     @Query("UPDATE saved_addresses SET is_selected = CASE WHEN id = :addressId THEN 1 ELSE 0 END")
     suspend fun updateSelectedAddress(addressId: Long)
-    
-    @Query("DELETE FROM saved_addresses")
-    suspend fun deleteAllAddresses()
-    
-    @Query("SELECT COUNT(*) FROM saved_addresses")
-    suspend fun getAddressCount(): Int
 }

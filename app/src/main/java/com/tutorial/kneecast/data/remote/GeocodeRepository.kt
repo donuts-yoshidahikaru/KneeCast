@@ -9,11 +9,10 @@ class GeocodeRepository {
 
     // Yahoo!ジオコーダAPIのベースURL
     private val geocoderBaseUrl = "https://map.yahooapis.jp/"
+    private var geocoderApi: GeocoderApi = RetrofitFactory
+        .createRetrofitInstance(geocoderBaseUrl)
+        .create(GeocoderApi::class.java)
 
-    private val geocoderApi: GeocoderApi by lazy {
-        RetrofitFactory.createRetrofitInstance(geocoderBaseUrl).create(GeocoderApi::class.java)
-    }
-    
     suspend fun getResponseFromAddress(address: String): GeocoderResponse? {
         return withContext(Dispatchers.IO) {
             try {
@@ -30,5 +29,4 @@ class GeocodeRepository {
             }
         }
     }
-    
 } 

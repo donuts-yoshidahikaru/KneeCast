@@ -7,12 +7,12 @@ import com.tutorial.kneecast.data.model.Geometry
 object AddressMapper {
 
     fun fromFeature(feature: Feature, isSelected: Boolean = false): SavedAddress {
-        val (longitude, latitude) = feature.Geometry.Coordinates
+        val (longitude, latitude) = feature.geometry.coordinates
             .split(",")
             .map { it.trim().toDouble() }
         
         return SavedAddress(
-            addressName = feature.Name,
+            addressName = feature.name,
             latitude = latitude,
             longitude = longitude,
             isSelected = isSelected
@@ -21,9 +21,9 @@ object AddressMapper {
 
     fun toFeature(savedAddress: SavedAddress): Feature {
         return Feature(
-            Name = savedAddress.addressName,
-            Geometry = Geometry(
-                Coordinates = "${savedAddress.longitude},${savedAddress.latitude}"
+            name = savedAddress.addressName,
+            geometry = Geometry(
+                coordinates = "${savedAddress.longitude},${savedAddress.latitude}"
             )
         )
     }
@@ -32,7 +32,7 @@ object AddressMapper {
         return savedAddresses.map { toFeature(it) }
     }
 
-    fun fromFeatures(features: List<Feature>, isSelected: Boolean = false): List<SavedAddress> {
-        return features.map { fromFeature(it, isSelected) }
-    }
+//    fun fromFeatures(features: List<Feature>, isSelected: Boolean = false): List<SavedAddress> {
+//        return features.map { fromFeature(it, isSelected) }
+//    }
 }

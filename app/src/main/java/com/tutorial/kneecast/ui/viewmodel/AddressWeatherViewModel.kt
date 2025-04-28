@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.remote.GeocodeRepository
 import com.tutorial.kneecast.data.repository.SavedAddressRepository
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@OptIn(FlowPreview::class)
 class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRepository) : ViewModel() {
     private val geocodeRepository = GeocodeRepository()
     
@@ -68,8 +70,9 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
         _isLoading.value = true
         try {
             val response = geocodeRepository.getResponseFromAddress(address)
-            _addressSuggestions.value = response?.Feature ?: emptyList()
+            _addressSuggestions.value = response?.feature ?: emptyList()
         } catch (e: Exception) {
+            Timber.tag("AddressWeatherViewModel").e(e, "Failed to fetch address suggestions")
             _addressSuggestions.value = emptyList()
         } finally {
             _isLoading.value = false
@@ -83,7 +86,7 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             try {
                 val currentList = _selectedAddresses.value.toMutableList()
                 // 同じ住所が登録されておらず、かつ5件未満の場合のみ追加
-                if (!currentList.any { it.Name == feature.Name } && currentList.size < 5) {
+                if (!currentList.any { it.name == feature.name } && currentList.size < 5) {
                     // データベースに保存し、選択状態にする
                     savedAddressRepository.saveAddress(feature, true)
                     
@@ -95,7 +98,7 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
                     _addressInput.value = ""
                 } else {
                     // エラーメッセージを設定
-                    if (currentList.any { it.Name == feature.Name }) {
+                    if (currentList.any { it.name == feature.name }) {
                         _error.value = "同じ住所は登録できません"
                     } else {
                         _error.value = "登録できる住所は5件までです"
@@ -103,7 +106,7 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
                 }
             } catch (e: Exception) {
                 _error.value = "住所の保存に失敗しました: ${e.localizedMessage}"
-                Timber.e(e, "Failed to save address: ${feature.Name}")
+                Timber.e(e, "Failed to save address: ${feature.name}")
             } finally {
                 _isLoading.value = false
             }
@@ -116,35 +119,25 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             _isLoading.value = true
             try {
                 // 選択する住所が現在のリストに存在するか確認
-                if (_selectedAddresses.value.any { it.Name == feature.Name }) {
+                if (_selectedAddresses.value.any { it.name == feature.name }) {
                     // データベースの選択状態を更新
                     savedAddressRepository.updateSelectedAddress(feature)
                     
                     // UI状態を更新
                     _currentSelectedAddress.value = feature
                     
-                    // リストの選択状態も更新（視覚的フィードバック用）
-                    refreshAddressListSelection(feature)
-                    
-                    Timber.d("選択住所を ${feature.Name} に更新しました")
+                    Timber.d("選択住所を ${feature.name} に更新しました")
                 } else {
                     _error.value = "指定された住所がリストに存在しません"
-                    Timber.w("Address not found in list for selection: ${feature.Name}")
+                    Timber.w("Address not found in list for selection: ${feature.name}")
                 }
             } catch (e: Exception) {
                 _error.value = "選択住所の更新に失敗しました: ${e.localizedMessage}"
-                Timber.e(e, "Failed to set current address: ${feature.Name}")
+                Timber.e(e, "Failed to set current address: ${feature.name}")
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-    
-    // リスト内の住所の選択状態を更新（視覚的フィードバック用）
-    private fun refreshAddressListSelection(selectedFeature: Feature) {
-        // 現在のリストをそのまま維持することで再描画を最小限に
-        // 実際の選択状態はcurrentSelectedAddressで管理されているため
-        // このメソッドは将来的に拡張するための準備
     }
     
     // 住所を削除
@@ -153,17 +146,17 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             _isLoading.value = true
             try {
                 // 削除する住所が現在のリストに存在するか確認
-                if (_selectedAddresses.value.any { it.Name == feature.Name }) {
+                if (_selectedAddresses.value.any { it.name == feature.name }) {
                     // データベースから削除
                     savedAddressRepository.deleteAddress(feature)
                     
                     // UIの状態を更新
                     val currentList = _selectedAddresses.value.toMutableList()
-                    currentList.removeIf { it.Name == feature.Name }
+                    currentList.removeIf { it.name == feature.name }
                     _selectedAddresses.value = currentList
                     
                     // 削除した住所が現在選択中だった場合、別の住所を選択
-                    if (_currentSelectedAddress.value?.Name == feature.Name) {
+                    if (_currentSelectedAddress.value?.name == feature.name) {
                         val nextAddress = currentList.lastOrNull()
                         if (nextAddress != null) {
                             // 次の住所を選択状態にする（DB更新も行う）
@@ -174,14 +167,14 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
                         }
                     }
                     
-                    Timber.d("住所 ${feature.Name} を削除しました")
+                    Timber.d("住所 ${feature.name} を削除しました")
                 } else {
                     _error.value = "指定された住所がリストに存在しません"
-                    Timber.w("Address not found in list for removal: ${feature.Name}")
+                    Timber.w("Address not found in list for removal: ${feature.name}")
                 }
             } catch (e: Exception) {
                 _error.value = "住所の削除に失敗しました: ${e.localizedMessage}"
-                Timber.e(e, "Failed to remove address: ${feature.Name}")
+                Timber.e(e, "Failed to remove address: ${feature.name}")
                 
                 // エラーが発生した場合は、データベースから再度読み込んで整合性を確保
                 loadSavedAddresses()
@@ -197,7 +190,7 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             val addresses = savedAddressRepository.getAllAddresses()
             
             // 既に表示中の住所との重複を防止（同じ住所名の住所を除外）
-            val uniqueAddresses = addresses.distinctBy { it.Name }
+            val uniqueAddresses = addresses.distinctBy { it.name }
             
             if (uniqueAddresses.size != addresses.size) {
                 Timber.w("重複した住所が検出されました。重複を除外します: ${addresses.size} → ${uniqueAddresses.size}")
@@ -208,7 +201,7 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             // 選択中の住所を復元
             savedAddressRepository.getSelectedAddress()?.let { address ->
                 _currentSelectedAddress.value = address
-                Timber.d("選択中の住所を復元: ${address.Name}")
+                Timber.d("選択中の住所を復元: ${address.name}")
             }
         } catch (e: Exception) {
             _error.value = "保存された住所の読み込みに失敗しました: ${e.localizedMessage}"

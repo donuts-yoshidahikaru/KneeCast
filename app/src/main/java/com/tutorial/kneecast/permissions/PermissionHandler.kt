@@ -20,7 +20,7 @@ class PermissionHandler(private val activity: ComponentActivity) {
     // パーミッション結果リスナーインタフェース
     interface PermissionResultListener {
         fun onPermissionGranted()
-        fun onPermissionDenied(deniedPermissions: List<String>)
+        fun onPermissionDenied()
     }
 
     // パーミッション結果のリスナーマップ
@@ -50,9 +50,7 @@ class PermissionHandler(private val activity: ComponentActivity) {
             // すべてのパーミッションが許可された
             listener.onPermissionGranted()
         } else {
-            // 拒否されたパーミッションがある
-            val deniedPermissions = permissions.filter { !it.value }.keys.toList()
-            listener.onPermissionDenied(deniedPermissions)
+            listener.onPermissionDenied()
         }
         
         // リスナーを使用後は削除
@@ -73,7 +71,7 @@ class PermissionHandler(private val activity: ComponentActivity) {
         } else {
             // パーミッションリクエスト
             permissionLauncher?.launch(locationPermissions) 
-                ?: listener.onPermissionDenied(listOf("パーミッションランチャーが初期化されていません"))
+                ?: listener.onPermissionDenied()
         }
     }
 

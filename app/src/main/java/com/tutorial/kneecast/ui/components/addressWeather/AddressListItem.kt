@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tutorial.kneecast.data.model.Feature
@@ -45,7 +44,7 @@ fun SuggestionItem(suggestion: Feature, onClick: () -> Unit) {
                 modifier = Modifier.padding(end = 12.dp)
             )
             Text(
-                text = suggestion.Name,
+                text = suggestion.name,
                 style = MaterialTheme.typography.bodyLarge,
                 fontSize = 16.sp
             )
@@ -64,7 +63,7 @@ fun SelectedAddressItem(
     onRemove: () -> Unit
 ) {
     // ログを追加して状態を確認
-    Timber.tag("SelectedAddressItem").d("Address: ${address.Name}, isSelected: $isSelected")
+    Timber.tag("SelectedAddressItem").d("Address: ${address.name}, isSelected: $isSelected")
     
     // 選択状態に応じた色とスタイルを設定 (remember を削除)
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
@@ -72,12 +71,10 @@ fun SelectedAddressItem(
     
     val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
                     else MaterialTheme.colorScheme.onSurfaceVariant
-    
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary
-                      else Color.Transparent
+
     
     val elevation = if (isSelected) 4.dp else 2.dp
-    
+
     Card(
         modifier = Modifier
             .wrapContentWidth()
@@ -98,7 +95,7 @@ fun SelectedAddressItem(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = address.Name,
+                    text = address.name,
                     style = MaterialTheme.typography.bodyMedium,
                     color = textColor,
                     fontSize = 16.sp
