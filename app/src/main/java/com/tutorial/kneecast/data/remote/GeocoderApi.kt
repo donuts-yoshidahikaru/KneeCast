@@ -5,6 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import com.tutorial.kneecast.BuildConfig
 import com.tutorial.kneecast.data.model.GeocoderResponse
+import com.tutorial.kneecast.data.model.GoGeocoderResponse
 
 //@Suppress("unused")
 interface GeocoderApi {
@@ -15,4 +16,9 @@ interface GeocoderApi {
         @Query("output") output: String = "json",
         @Query("al") al: Int = 2
     ): Response<GeocoderResponse>
+
+    @GET("geocode")
+    suspend fun getCoordinatesFromGoServer(
+        @Query("address") address: String
+    ): Response<GoGeocoderResponse>
 }
