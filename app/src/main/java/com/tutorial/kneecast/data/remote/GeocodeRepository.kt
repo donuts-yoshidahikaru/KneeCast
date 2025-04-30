@@ -12,6 +12,7 @@ import com.tutorial.kneecast.data.model.ResultInfo
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import retrofit2.HttpException
+import timber.log.Timber
 
 class GeocodeRepository {
 
@@ -39,37 +40,39 @@ class GeocodeRepository {
             
             try {
                 // Goバックエンドのエンドポイントを優先的に呼び出す
-                Log.d("GeocodeRepository", "Goバックエンドから座標を取得: address=$address")
+                Timber.tag("GeocodeRepository").d("Goバックエンドから座標を取得: address=$address")
                 val geoResponse = goGeocoderApi.getCoordinatesFromGoServer(address = address)
                 
                 if (geoResponse.isSuccessful) {
                     val goGeoResponseBody = geoResponse.body()
                     if (goGeoResponseBody != null) {
-                        Log.d("GeocodeRepository", "Goバックエンドからの応答成功: ${goGeoResponseBody.name}")
+                        Timber.tag("GeocodeRepository")
+                            .d("Goバックエンドからの応答成功: ${goGeoResponseBody.name}")
                         // GeocoderResponseに変換
                         return@withContext convertToGeocoderResponse(goGeoResponseBody)
                     }
                 } else {
-                    Log.w("GeocodeRepository", "Goバックエンドからの応答失敗: ${geoResponse.code()}")
+                    Timber.tag("GeocodeRepository")
+                        .w("Goバックエンドからの応答失敗: ${geoResponse.code()}")
                 }
                 
                 // レスポンスが正常でなかった場合、Yahoo APIにフォールバック
                 return@withContext fallbackToYahooApi(address)
             } catch (e: ConnectException) {
                 // 接続エラー（サーバーが起動していない等）の場合
-                Log.w("GeocodeRepository", "Goサーバー接続エラー: ${e.message}")
+                Timber.tag("GeocodeRepository").w("Goサーバー接続エラー: ${e.message}")
                 return@withContext fallbackToYahooApi(address)
             } catch (e: SocketTimeoutException) {
                 // タイムアウトエラーの場合
-                Log.w("GeocodeRepository", "Goサーバータイムアウト: ${e.message}")
+                Timber.tag("GeocodeRepository").w("Goサーバータイムアウト: ${e.message}")
                 return@withContext fallbackToYahooApi(address)
             } catch (e: HttpException) {
                 // HTTPエラーの場合
-                Log.w("GeocodeRepository", "GoサーバーHTTPエラー: ${e.message}")
+                Timber.tag("GeocodeRepository").w("GoサーバーHTTPエラー: ${e.message}")
                 return@withContext fallbackToYahooApi(address)
             } catch (e: Exception) {
                 // その他の予期しないエラー
-                Log.e("GeocodeRepository", "座標取得中に予期しないエラー発生", e)
+                Timber.tag("GeocodeRepository").e(e, "座標取得中に予期しないエラー発生")
                 return@withContext fallbackToYahooApi(address)
             }
         }
@@ -80,20 +83,21 @@ class GeocodeRepository {
      */
     private suspend fun fallbackToYahooApi(address: String): GeocoderResponse? {
         return try {
-            Log.d("GeocodeRepository", "Yahoo APIから座標を取得: address=$address")
+            Timber.tag("GeocodeRepository").d("Yahoo APIから座標を取得: address=$address")
             val yahooResponse = geocoderApi.getCoordinates(address = address)
             if (!yahooResponse.isSuccessful) {
-                Log.w("GeocodeRepository", "Yahoo APIからの応答失敗: ${yahooResponse.code()}")
+                Timber.tag("GeocodeRepository")
+                    .w("Yahoo APIからの応答失敗: ${yahooResponse.code()}")
                 null
             } else {
                 val yahooResponseBody = yahooResponse.body()
                 if (yahooResponseBody != null) {
-                    Log.d("GeocodeRepository", "Yahoo APIからの応答成功")
+                    Timber.tag("GeocodeRepository").d("Yahoo APIからの応答成功")
                 }
                 yahooResponseBody
             }
         } catch (e: Exception) {
-            Log.e("GeocodeRepository", "Yahoo API呼び出し中にエラー発生", e)
+            Timber.tag("GeocodeRepository").e(e, "Yahoo API呼び出し中にエラー発生")
             null
         }
     }
