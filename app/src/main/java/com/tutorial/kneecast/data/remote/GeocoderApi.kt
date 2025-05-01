@@ -3,20 +3,15 @@ package com.tutorial.kneecast.data.remote
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
-import com.tutorial.kneecast.BuildConfig
-import com.tutorial.kneecast.data.model.GeocoderResponse
 import com.tutorial.kneecast.data.model.GoGeocoderResponse
 
-//@Suppress("unused")
+/**
+ * ジオコーディングAPIインターフェース
+ */
 interface GeocoderApi {
-    @GET("geocode/V1/geoCoder")
-    suspend fun getCoordinates(
-        @Query("appid") appId: String = BuildConfig.YAHOO_CLIENT_ID,
-        @Query("query") address: String,
-        @Query("output") output: String = "json",
-        @Query("al") al: Int = 2
-    ): Response<GeocoderResponse>
-
+    /**
+     * 住所から座標を取得するGoサーバーエンドポイント
+     */
     @GET("geocode")
     suspend fun getCoordinatesFromGoServer(
         @Query("address") address: String
