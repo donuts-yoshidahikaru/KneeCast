@@ -8,7 +8,7 @@ import com.tutorial.kneecast.data.model.GoGeocoderResponse
 /**
  * ジオコーディングAPIインターフェース
  */
-interface GeocoderApi {
+interface GeocoderGoApi {
     /**
      * 住所から座標を取得するGoサーバーエンドポイント
      */

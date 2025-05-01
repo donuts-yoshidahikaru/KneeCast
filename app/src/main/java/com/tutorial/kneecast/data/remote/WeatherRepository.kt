@@ -1,9 +1,7 @@
 package com.tutorial.kneecast.data.remote
 
-import android.util.Log
 import com.tutorial.kneecast.data.mapper.WeatherResponseMapper
 import com.tutorial.kneecast.data.model.Coordinates
-import com.tutorial.kneecast.data.model.GoWeatherResponse
 import com.tutorial.kneecast.data.model.WeatherResponse
 import com.tutorial.kneecast.network.RetrofitFactory
 import kotlinx.coroutines.Dispatchers
@@ -15,9 +13,9 @@ class WeatherRepository {
     private val TAG = "Weather-Repository"
 
     // GeocoderAPI - 住所から座標を取得するために使用
-    private val geocoderApi: GeocoderApi = RetrofitFactory
+    private val geocoderGoApi: GeocoderGoApi = RetrofitFactory
         .createGoServerRetrofitInstance()
-        .create(GeocoderApi::class.java)
+        .create(GeocoderGoApi::class.java)
 
     // Goサーバー用のWeatherAPI
     private val weatherGoApi: WeatherGoApi = RetrofitFactory
@@ -85,7 +83,7 @@ class WeatherRepository {
         
         try {
             // Goサーバーから座標を取得
-            val geoResponse = geocoderApi.getCoordinatesFromGoServer(address = address)
+            val geoResponse = geocoderGoApi.getCoordinatesFromGoServer(address = address)
             
             if (geoResponse.isSuccessful) {
                 val goGeoResponseBody = geoResponse.body()

@@ -8,7 +8,6 @@ import kotlinx.coroutines.withContext
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.model.Geometry
 import com.tutorial.kneecast.data.model.ResultInfo
-import com.tutorial.kneecast.data.model.GoLocation
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import retrofit2.HttpException
@@ -17,9 +16,9 @@ import timber.log.Timber
 class GeocodeRepository {
 
     // Goサーバー用のAPIインスタンス
-    private var goGeocoderApi: GeocoderApi = RetrofitFactory
+    private var geocoderGoApi: GeocoderGoApi = RetrofitFactory
         .createGoServerRetrofitInstance()
-        .create(GeocoderApi::class.java)
+        .create(GeocoderGoApi::class.java)
 
     /**
      * 指定された住所から座標情報を取得します。
@@ -34,7 +33,7 @@ class GeocodeRepository {
             try {
                 // Goバックエンドのエンドポイントを呼び出す
                 Timber.tag("GeocodeRepository").d("Goバックエンドから座標を取得: address=$address")
-                val geoResponse = goGeocoderApi.getCoordinatesFromGoServer(address = address)
+                val geoResponse = geocoderGoApi.getCoordinatesFromGoServer(address = address)
                 
                 if (geoResponse.isSuccessful) {
                     val goGeoResponseBody = geoResponse.body()
