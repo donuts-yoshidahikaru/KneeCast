@@ -63,6 +63,10 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
     // 入力テキストを更新
     fun updateAddressInput(input: String) {
         _addressInput.value = input
+        // 入力が空か1文字以下の場合は候補リストをクリア
+        if (input.length < 2) {
+            _addressSuggestions.value = emptyList()
+        }
     }
     
     // 候補住所を取得
