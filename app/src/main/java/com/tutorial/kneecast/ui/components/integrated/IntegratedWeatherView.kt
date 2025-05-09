@@ -158,11 +158,7 @@ class IntegratedWeatherView {
             
             if (isCurrentLocationSelected) {
                 // 現在地の天気情報を表示
-                Text(
-                    text = "現在地の天気情報",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                // 注: ここには後のイシューで現在地の天気コンポーネントを追加します
+                CurrentLocationWeatherDisplay()
             } else if (selectedAddresses.isNotEmpty() && currentSelectedAddress != null) {
                 // 選択された住所の天気情報を表示
                 WeatherInfoPager(
