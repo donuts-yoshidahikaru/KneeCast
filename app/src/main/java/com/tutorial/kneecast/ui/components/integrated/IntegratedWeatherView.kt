@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.location.Location
 import android.widget.Toast
+import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.repository.factory.SavedAddressRepositoryFactory
 import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherViewModelFactory
@@ -58,12 +59,42 @@ class IntegratedWeatherView {
         val locationLoading by locationViewModel.loading.observeAsState(false)
         val locationError by locationViewModel.error.observeAsState()
         
-        // 現在地選択状態を管理
-        var isCurrentLocationSelected by remember { mutableStateOf(false) }
+        // 現在地選択状態を管理（永続化された値を初期値として使用）
+        var isCurrentLocationSelected by remember { 
+            mutableStateOf(savedAddressRepository.isCurrentLocationSelected()) 
+        }
+        
+        // 最後に保存された位置情報を取得
+        val lastKnownLocation = remember {
+            savedAddressRepository.getLastKnownLocation()?.let { (lat, lon) ->
+                Location("cached").apply {
+                    latitude = lat
+                    longitude = lon
+                }
+            }
+        }
+        
+        // 現在の位置情報（リアルタイムまたはキャッシュ）
+        val effectiveLocation = remember(location, lastKnownLocation) {
+            location ?: lastKnownLocation
+        }
         
         // 画面表示時に一度だけ位置情報を自動的に取得
         LaunchedEffect(Unit) {
             locationViewModel.fetchLocation()
+        }
+        
+        // 位置情報が更新されたら保存
+        LaunchedEffect(location) {
+            location?.let {
+                savedAddressRepository.saveLastKnownLocation(it.latitude, it.longitude)
+                Timber.d("位置情報を保存しました: ${it.latitude}, ${it.longitude}")
+            }
+        }
+        
+        // 現在地選択状態が変更されたら永続化
+        LaunchedEffect(isCurrentLocationSelected) {
+            savedAddressRepository.setCurrentLocationSelected(isCurrentLocationSelected)
         }
         
         // エラーメッセージの表示（住所関連）
@@ -85,8 +116,9 @@ class IntegratedWeatherView {
         LaunchedEffect(currentSelectedAddress) {
             currentSelectedAddress?.let {
                 // 住所が選択されたら現在地選択状態をリセット
-                isCurrentLocationSelected = false
-                Timber.tag("IntegratedWeatherView").d("現在選択中の住所: ${it.name}")
+                if (!isCurrentLocationSelected) {
+                    Timber.tag("IntegratedWeatherView").d("現在選択中の住所: ${it.name}")
+                }
             }
         }
         
@@ -151,7 +183,7 @@ class IntegratedWeatherView {
                             Timber.tag("IntegratedWeatherView").d("現在地が選択されました")
                             
                             // 位置情報が古いまたは取得できていない場合は再取得
-                            if (location == null) {
+                            if (effectiveLocation == null) {
                                 locationViewModel.fetchLocation()
                             }
                         }
@@ -185,7 +217,7 @@ class IntegratedWeatherView {
                 IntegratedWeatherPager(
                     addresses = selectedAddresses,
                     currentSelectedAddress = currentSelectedAddress,
-                    currentLocation = location,
+                    currentLocation = effectiveLocation,
                     isCurrentLocationSelected = isCurrentLocationSelected,
                     onAddressSelected = { feature ->
                         if (CurrentLocationFeature.isCurrentLocation(feature)) {
