@@ -1,7 +1,7 @@
 package com.tutorial.kneecast.data
 
 import android.content.Context
-import com.tutorial.kneecast.MainActivity
+import androidx.activity.ComponentActivity
 import com.tutorial.kneecast.app.AppInitializer
 import com.tutorial.kneecast.location.GPSLocationManager
 import com.tutorial.kneecast.permissions.PermissionHandler
@@ -15,7 +15,7 @@ class LocationRepository(private val context: Context, private val appInitialize
     private var permissionHandler: PermissionHandler? = null
     
     init {
-        if (context is MainActivity) {
+        if (context is ComponentActivity) {
             permissionHandler = PermissionHandler(context)
         }
     }
