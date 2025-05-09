@@ -87,6 +87,25 @@ class SavedAddressRepository(
         }
     }
 
+    suspend fun clearSelectedAddress() {
+        try {
+            // 選択中の住所を取得
+            val selectedAddress = savedAddressDao.getSelectedAddress()
+            
+            if (selectedAddress != null) {
+                // 選択状態を解除して更新
+                val updatedAddress = selectedAddress.copy(isSelected = false)
+                savedAddressDao.insertAddress(updatedAddress)
+                Timber.d("選択住所の状態をクリアしました: ${selectedAddress.addressName}")
+            } else {
+                Timber.d("クリアする選択住所がありません")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "選択住所のクリアに失敗しました")
+            throw e
+        }
+    }
+
 //    suspend fun getAddressCount(): Int {
 //        return savedAddressDao.getAddressCount()
 //    }

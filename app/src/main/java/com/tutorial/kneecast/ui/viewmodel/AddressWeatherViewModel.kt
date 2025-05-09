@@ -214,4 +214,23 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             _isLoading.value = false
         }
     }
+
+    // 現在選択中の住所をクリア
+    fun clearCurrentAddress() {
+        viewModelScope.launch {
+            try {
+                // 選択状態を解除
+                _currentSelectedAddress.value = null
+                
+                // データベース上でも選択状態を解除する
+                // 注：実装によっては不要な場合もある
+                savedAddressRepository.clearSelectedAddress()
+                
+                Timber.d("現在選択中の住所をクリアしました")
+            } catch (e: Exception) {
+                _error.value = "選択住所のクリアに失敗しました: ${e.localizedMessage}"
+                Timber.e(e, "Failed to clear current address")
+            }
+        }
+    }
 } 
