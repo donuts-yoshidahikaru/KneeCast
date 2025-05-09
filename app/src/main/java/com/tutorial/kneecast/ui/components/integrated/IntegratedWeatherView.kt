@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -13,12 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
+import android.location.Location
 import android.widget.Toast
+import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.repository.factory.SavedAddressRepositoryFactory
 import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherViewModelFactory
 import com.tutorial.kneecast.ui.components.addressWeather.SuggestionItem
 import com.tutorial.kneecast.ui.components.addressWeather.SelectedAddressItem
-import com.tutorial.kneecast.ui.components.addressWeather.WeatherInfoPager
+import com.tutorial.kneecast.ui.viewmodel.provideLocationViewModel
 import timber.log.Timber
 
 /**
@@ -39,6 +42,9 @@ class IntegratedWeatherView {
             factory = AddressWeatherViewModelFactory(savedAddressRepository)
         )
         
+        // 位置情報ViewModelを取得
+        val locationViewModel = provideLocationViewModel()
+        
         // StateFlowをStateとして収集
         val addressInput by viewModel.addressInput.collectAsState()
         val suggestions by viewModel.addressSuggestions.collectAsState()
@@ -47,25 +53,37 @@ class IntegratedWeatherView {
         val isLoading by viewModel.isLoading.collectAsState()
         val error by viewModel.error.collectAsState()
         
-        // 現在地選択状態を管理（追加）
+        // 位置情報をStateとして観測
+        val location by locationViewModel.location.observeAsState()
+        val locationLoading by locationViewModel.loading.observeAsState(false)
+        val locationError by locationViewModel.error.observeAsState()
+        
+        // 現在地選択状態を管理
         var isCurrentLocationSelected by remember { mutableStateOf(false) }
         
-        // エラーメッセージの表示
+        // 画面表示時に一度だけ位置情報を自動的に取得
+        LaunchedEffect(Unit) {
+            locationViewModel.fetchLocation()
+        }
+        
+        // エラーメッセージの表示（住所関連）
         LaunchedEffect(error) {
             error?.let { errorMessage ->
                 Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                // エラーメッセージを表示したらクリア
                 viewModel.clearError()
             }
         }
         
-        // UI側で選択中の住所を追跡（デバッグ用）
-        var selectedAddressName by remember { mutableStateOf("") }
+        // エラーメッセージの表示（位置情報関連）
+        LaunchedEffect(locationError) {
+            locationError?.let { errorMessage ->
+                Toast.makeText(context, "位置情報エラー: $errorMessage", Toast.LENGTH_SHORT).show()
+            }
+        }
         
         // 現在選択中の住所が変わったらローカル状態も更新
         LaunchedEffect(currentSelectedAddress) {
             currentSelectedAddress?.let {
-                selectedAddressName = it.name
                 // 住所が選択されたら現在地選択状態をリセット
                 isCurrentLocationSelected = false
                 Timber.tag("IntegratedWeatherView").d("現在選択中の住所: ${it.name}")
@@ -129,7 +147,13 @@ class IntegratedWeatherView {
                             isCurrentLocationSelected = true
                             // 住所の選択状態をクリア
                             viewModel.clearCurrentAddress()
+                            // 現在地が選択されたことをログ
                             Timber.tag("IntegratedWeatherView").d("現在地が選択されました")
+                            
+                            // 位置情報が古いまたは取得できていない場合は再取得
+                            if (location == null) {
+                                locationViewModel.fetchLocation()
+                            }
                         }
                     )
                 }
@@ -156,17 +180,26 @@ class IntegratedWeatherView {
             // 天気情報表示エリア
             Spacer(modifier = Modifier.height(24.dp))
             
-            if (isCurrentLocationSelected) {
-                // 現在地の天気情報を表示
-                CurrentLocationWeatherDisplay()
-            } else if (selectedAddresses.isNotEmpty() && currentSelectedAddress != null) {
-                // 選択された住所の天気情報を表示
-                WeatherInfoPager(
-                    addresses = selectedAddresses, 
+            // 統合されたページャーで天気情報を表示
+            if (selectedAddresses.isNotEmpty() || isCurrentLocationSelected) {
+                IntegratedWeatherPager(
+                    addresses = selectedAddresses,
                     currentSelectedAddress = currentSelectedAddress,
-                    onAddressSelected = { address -> 
-                        isCurrentLocationSelected = false
-                        viewModel.setCurrentAddress(address)
+                    currentLocation = location,
+                    isCurrentLocationSelected = isCurrentLocationSelected,
+                    onAddressSelected = { feature ->
+                        if (CurrentLocationFeature.isCurrentLocation(feature)) {
+                            // 現在地が選択された
+                            isCurrentLocationSelected = true
+                            viewModel.clearCurrentAddress()
+                        } else {
+                            // 住所が選択された
+                            isCurrentLocationSelected = false
+                            // 選択された住所をリストから探して設定
+                            selectedAddresses.find { it.name == feature.name }?.let {
+                                viewModel.setCurrentAddress(it)
+                            }
+                        }
                     }
                 )
             } else {
