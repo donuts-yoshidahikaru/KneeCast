@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.location.Location
@@ -122,124 +123,134 @@ class IntegratedWeatherView {
             }
         }
         
-        Column(
-            modifier = modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // 住所入力フィールド
-            OutlinedTextField(
-                value = addressInput,
-                onValueChange = { viewModel.updateAddressInput(it) },
-                label = { Text("住所を入力") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
-            )
-            
-            // 読み込み中インジケータ
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-            
-            // 候補住所リスト
-            if (suggestions.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                ) {
-                    items(suggestions) { suggestion ->
-                        SuggestionItem(
-                            suggestion = suggestion,
-                            onClick = { 
-                                viewModel.selectAddress(suggestion)
-                                // 住所が選択されたら現在地選択状態をリセット
-                                isCurrentLocationSelected = false
-                            }
-                        )
-                    }
-                }
-            }
-            
-            // 住所リスト表示エリア（現在地 + 選択された住所）
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Box(modifier = modifier) {
+            // 住所検索と天気表示エリアのレイアウト
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 現在地アイテムを最初に表示
-                item {
-                    CurrentLocationItem(
-                        isSelected = isCurrentLocationSelected,
-                        onClick = {
-                            // 現在地をアクティブにする
-                            isCurrentLocationSelected = true
-                            // 住所の選択状態をクリア
-                            viewModel.clearCurrentAddress()
-                            // 現在地が選択されたことをログ
-                            Timber.tag("IntegratedWeatherView").d("現在地が選択されました")
-                            
-                            // 位置情報が古いまたは取得できていない場合は再取得
-                            if (effectiveLocation == null) {
-                                locationViewModel.fetchLocation()
-                            }
+                // 住所入力フィールド
+                OutlinedTextField(
+                    value = addressInput,
+                    onValueChange = { viewModel.updateAddressInput(it) },
+                    label = { Text("住所を入力") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
+                )
+                
+                // 候補住所リスト
+                if (suggestions.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                    ) {
+                        items(suggestions) { suggestion ->
+                            SuggestionItem(
+                                suggestion = suggestion,
+                                onClick = { 
+                                    viewModel.selectAddress(suggestion)
+                                    // 住所が選択されたら現在地選択状態をリセット
+                                    isCurrentLocationSelected = false
+                                }
+                            )
                         }
-                    )
+                    }
                 }
                 
-                // 選択された住所リスト
-                if (selectedAddresses.isNotEmpty()) {
-                    items(selectedAddresses) { address ->
-                        val isSelected = !isCurrentLocationSelected && address == currentSelectedAddress
-                        
-                        SelectedAddressItem(
-                            address = address,
-                            isSelected = isSelected,
-                            onClick = { 
-                                // 住所を選択すると現在地選択状態は解除される
-                                isCurrentLocationSelected = false
-                                viewModel.setCurrentAddress(address)
-                            },
-                            onRemove = { viewModel.removeAddress(address) }
+                // 住所リスト表示エリア（現在地 + 選択された住所）
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 現在地アイテムを最初に表示
+                    item {
+                        CurrentLocationItem(
+                            isSelected = isCurrentLocationSelected,
+                            onClick = {
+                                // 現在地をアクティブにする
+                                isCurrentLocationSelected = true
+                                // 住所の選択状態をクリア
+                                viewModel.clearCurrentAddress()
+                                // 現在地が選択されたことをログ
+                                Timber.tag("IntegratedWeatherView").d("現在地が選択されました")
+                                
+                                // 位置情報が古いまたは取得できていない場合は再取得
+                                if (effectiveLocation == null) {
+                                    locationViewModel.fetchLocation()
+                                }
+                            }
                         )
                     }
+                    
+                    // 選択された住所リスト
+                    if (selectedAddresses.isNotEmpty()) {
+                        items(selectedAddresses) { address ->
+                            val isSelected = !isCurrentLocationSelected && address == currentSelectedAddress
+                            
+                            SelectedAddressItem(
+                                address = address,
+                                isSelected = isSelected,
+                                onClick = { 
+                                    // 住所を選択すると現在地選択状態は解除される
+                                    isCurrentLocationSelected = false
+                                    viewModel.setCurrentAddress(address)
+                                },
+                                onRemove = { viewModel.removeAddress(address) }
+                            )
+                        }
+                    }
+                }
+                
+                // 天気情報表示エリア
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // 統合されたページャーで天気情報を表示
+                if (selectedAddresses.isNotEmpty() || isCurrentLocationSelected) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        IntegratedWeatherPager(
+                            addresses = selectedAddresses,
+                            currentSelectedAddress = currentSelectedAddress,
+                            currentLocation = effectiveLocation,
+                            isCurrentLocationSelected = isCurrentLocationSelected,
+                            onAddressSelected = { feature ->
+                                if (CurrentLocationFeature.isCurrentLocation(feature)) {
+                                    // 現在地が選択された
+                                    isCurrentLocationSelected = true
+                                    viewModel.clearCurrentAddress()
+                                } else {
+                                    // 住所が選択された
+                                    isCurrentLocationSelected = false
+                                    // 選択された住所をリストから探して設定
+                                    selectedAddresses.find { it.name == feature.name }?.let {
+                                        viewModel.setCurrentAddress(it)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    // 何も選択されていない場合のメッセージ
+                    Text(
+                        text = "現在地または住所を選択して天気を確認してください",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 }
             }
             
-            // 天気情報表示エリア
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // 統合されたページャーで天気情報を表示
-            if (selectedAddresses.isNotEmpty() || isCurrentLocationSelected) {
-                IntegratedWeatherPager(
-                    addresses = selectedAddresses,
-                    currentSelectedAddress = currentSelectedAddress,
-                    currentLocation = effectiveLocation,
-                    isCurrentLocationSelected = isCurrentLocationSelected,
-                    onAddressSelected = { feature ->
-                        if (CurrentLocationFeature.isCurrentLocation(feature)) {
-                            // 現在地が選択された
-                            isCurrentLocationSelected = true
-                            viewModel.clearCurrentAddress()
-                        } else {
-                            // 住所が選択された
-                            isCurrentLocationSelected = false
-                            // 選択された住所をリストから探して設定
-                            selectedAddresses.find { it.name == feature.name }?.let {
-                                viewModel.setCurrentAddress(it)
-                            }
-                        }
-                    }
-                )
-            } else {
-                // 何も選択されていない場合のメッセージ
-                Text(
-                    text = "現在地または住所を選択して天気を確認してください",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            // 読み込み中インジケータ（最上部に棒状で表示）
+            if (isLoading || locationLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .zIndex(10f)  // 最前面に表示
+                        .padding(horizontal = 16.dp)
                 )
             }
         }

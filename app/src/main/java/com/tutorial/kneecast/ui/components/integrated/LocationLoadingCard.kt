@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
@@ -21,13 +22,14 @@ fun LocationLoadingCard(onRetry: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "位置情報を取得しています",
-                style = MaterialTheme.typography.titleMedium
+                text = "現在地の位置情報を取得できませんでした",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
             )
             
             Spacer(modifier = Modifier.height(16.dp))
