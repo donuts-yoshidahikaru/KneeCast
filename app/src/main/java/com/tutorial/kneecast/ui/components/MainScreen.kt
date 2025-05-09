@@ -1,31 +1,22 @@
 package com.tutorial.kneecast.ui.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherView
-import com.tutorial.kneecast.ui.components.currentLocationWeather.CurrentLocationWeatherView
+import androidx.compose.ui.Modifier
+import com.tutorial.kneecast.ui.components.integrated.IntegratedWeatherView
 
+/**
+ * アプリのメイン画面
+ * 住所検索と現在地の両方からの天気情報を単一のビューで表示する
+ */
 class MainScreen {
     @Composable
     fun Content() {
-        // 各 View のクラスをインスタンス化
-        val addressView = AddressWeatherView()
-        val currentLocationView = CurrentLocationWeatherView()
-
-        // Column で上下に並べる。weight(1f) により、それぞれが均等（画面の半分）を占有します。
-        Column(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
-            addressView.Content(
-                    modifier = androidx.compose.ui.Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-            )
-            currentLocationView.Content(
-                    modifier = androidx.compose.ui.Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-            )
-        }
+        // 統合されたビューを表示
+        val integratedView = IntegratedWeatherView()
+        
+        integratedView.Content(
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
