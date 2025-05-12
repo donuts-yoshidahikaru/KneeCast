@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.ui.components.addressWeather.AddressSearchScreen
 import com.tutorial.kneecast.ui.components.integrated.IntegratedWeatherView
+import com.tutorial.kneecast.ui.components.integrated.onAddressReceived
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -24,14 +25,11 @@ fun MainNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: String = Destinations.MAIN_SCREEN
 ) {
-    // IntegratedWeatherViewのインスタンスを保持
-    val integratedView = remember { IntegratedWeatherView() }
-    
     // 選択された住所を受け取るコールバック関数
     val onAddressSelected: (Feature) -> Unit = remember {
         { feature ->
             Timber.d("住所が選択されました: ${feature.name}")
-            integratedView.onAddressReceived(feature)
+            onAddressReceived(feature)
         }
     }
     
@@ -43,7 +41,7 @@ fun MainNavHost(
         // メインスクリーン
         composable(Destinations.MAIN_SCREEN) {
             // メイン画面の表示
-            integratedView.Content(
+            IntegratedWeatherView(
                 modifier = modifier,
                 onAddAddressClick = {
                     navController.navigate(Destinations.ADDRESS_SEARCH)

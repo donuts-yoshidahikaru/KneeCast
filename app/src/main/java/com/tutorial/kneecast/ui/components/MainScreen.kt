@@ -9,12 +9,10 @@ import com.tutorial.kneecast.ui.navigation.MainNavHost
  * アプリのメイン画面
  * ナビゲーションホストを使用して画面遷移を管理
  */
-class MainScreen {
-    @Composable
-    fun Content() {
-        // ナビゲーションホストを表示
-        MainNavHost(
-            modifier = Modifier.fillMaxSize()
-        )
-    }
+@Composable
+fun MainScreen(modifier: Modifier = Modifier) {
+    // ナビゲーションホストを表示
+    MainNavHost(
+        modifier = modifier.fillMaxSize()
+    )
 }
