@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -25,13 +27,40 @@ import com.tutorial.kneecast.ui.components.addressWeather.SuggestionItem
 import com.tutorial.kneecast.ui.components.addressWeather.SelectedAddressItem
 import com.tutorial.kneecast.ui.viewmodel.provideLocationViewModel
 import timber.log.Timber
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 
 /**
  * 住所検索と現在地の天気表示を統合したメイン画面
  */
 class IntegratedWeatherView {
+    // ViewModelへの参照を保持
+    private var viewModelRef: AddressWeatherViewModel? = null
+    
+    // 選択待ちの住所を保持するためのキュー
+    private val pendingAddresses = mutableListOf<Feature>()
+    
+    /**
+     * 住所検索画面から選択された住所を受け取るメソッド
+     */
+    fun onAddressReceived(feature: Feature) {
+        Timber.d("住所を受け取りました: ${feature.name}")
+        val viewModel = viewModelRef
+        if (viewModel != null) {
+            Timber.d("ViewModelが利用可能なので住所を追加します: ${feature.name}")
+            viewModel.selectAddress(feature)
+        } else {
+            Timber.d("ViewModelがまだないので住所をキューに追加します: ${feature.name}")
+            // ViewModelがまだ初期化されていない場合はキューに追加
+            pendingAddresses.add(feature)
+        }
+    }
+    
     @Composable
-    fun Content(modifier: Modifier = Modifier) {
+    fun Content(
+        modifier: Modifier = Modifier,
+        onAddAddressClick: () -> Unit = {} // 住所追加ボタンクリック時のコールバック
+    ) {
         val context = LocalContext.current
         
         // SavedAddressRepositoryを初期化
@@ -44,12 +73,33 @@ class IntegratedWeatherView {
             factory = AddressWeatherViewModelFactory(savedAddressRepository)
         )
         
+        // ViewModelの参照を保持
+        LaunchedEffect(viewModel) {
+            Timber.d("ViewModelの参照を設定")
+            viewModelRef = viewModel
+            
+            // 保留中の住所があれば追加
+            if (pendingAddresses.isNotEmpty()) {
+                Timber.d("保留中の住所(${pendingAddresses.size}件)を追加")
+                pendingAddresses.forEach { feature ->
+                    viewModel.selectAddress(feature)
+                }
+                pendingAddresses.clear()
+            }
+        }
+        
+        // ViewModelの参照をDisposableEffectでも管理して確実に保持
+        DisposableEffect(viewModel) {
+            onDispose {
+                // 画面が破棄されるときは参照を保持したまま
+                Timber.d("画面が破棄されますが、ViewModelの参照は保持します")
+            }
+        }
+        
         // 位置情報ViewModelを取得
         val locationViewModel = provideLocationViewModel()
         
         // StateFlowをStateとして収集
-        val addressInput by viewModel.addressInput.collectAsState()
-        val suggestions by viewModel.addressSuggestions.collectAsState()
         val selectedAddresses by viewModel.selectedAddresses.collectAsState()
         val currentSelectedAddress by viewModel.currentSelectedAddress.collectAsState()
         val isLoading by viewModel.isLoading.collectAsState()
@@ -131,39 +181,7 @@ class IntegratedWeatherView {
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 住所入力フィールド
-                OutlinedTextField(
-                    value = addressInput,
-                    onValueChange = { viewModel.updateAddressInput(it) },
-                    label = { Text("住所を入力") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
-                )
-                
-                // 候補住所リスト
-                if (suggestions.isNotEmpty()) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 200.dp)
-                    ) {
-                        items(suggestions) { suggestion ->
-                            SuggestionItem(
-                                suggestion = suggestion,
-                                onClick = { 
-                                    viewModel.selectAddress(suggestion)
-                                    // 住所が選択されたら現在地選択状態をリセット
-                                    isCurrentLocationSelected = false
-                                }
-                            )
-                        }
-                    }
-                }
-                
-                // 住所リスト表示エリア（現在地 + 選択された住所）
-                Spacer(modifier = Modifier.height(16.dp))
-                
+                // 住所リスト表示エリア（現在地 + 選択された住所 + 追加ボタン）
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -205,9 +223,45 @@ class IntegratedWeatherView {
                             )
                         }
                     }
+                    
+                    // 住所追加ボタンを最後に表示
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable(onClick = onAddAddressClick),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(4.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = "追加",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "住所を追加",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontSize = 16.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 
-                // 天気情報表示エリア
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // 統合されたページャーで天気情報を表示
