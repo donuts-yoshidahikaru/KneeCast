@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.play.services.location)
 
     implementation(libs.androidx.runtime.livedata)
@@ -95,14 +96,11 @@ dependencies {
     implementation(libs.androidx.room.rxjava3)
     implementation(libs.androidx.room.guava)
     implementation(libs.androidx.room.paging)
-    implementation(libs.androidx.room.paging)
 
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.room.testing)
-
-    annotationProcessor(libs.androidx.room.compiler)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

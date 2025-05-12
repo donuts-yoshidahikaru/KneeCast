@@ -74,11 +74,5 @@ class LocationViewModel : ViewModel() {
         _error.value = null
         appInitializer.requestLocationPermissions()
     }
-    
-    /**
-     * エラーメッセージをクリア
-     */
-    fun clearError() {
-        _error.value = null
-    }
+
 } 

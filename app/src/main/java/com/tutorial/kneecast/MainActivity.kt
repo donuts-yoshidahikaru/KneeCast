@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     LocalAppInitializer provides appInitializer
                 ) {
                     Surface(modifier = Modifier.fillMaxSize()) {
-                        MainScreen().Content()
+                        MainScreen()
                     }
                 }
             }

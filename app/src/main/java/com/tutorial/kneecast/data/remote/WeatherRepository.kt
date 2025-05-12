@@ -10,7 +10,7 @@ import timber.log.Timber
 
 class WeatherRepository {
 
-    private val TAG = "Weather-Repository"
+    private val tag = "Weather-Repository"
 
     // GeocoderAPI - 住所から座標を取得するために使用
     private val geocoderGoApi: GeocoderGoApi = RetrofitFactory
@@ -55,7 +55,7 @@ class WeatherRepository {
                 
                 // キャッシュが有効な場合はキャッシュからデータを返す
                 if (cachedInfo != null && (now - cachedInfo.timestamp) < cacheExpirationMs) {
-                    Timber.tag(TAG).i("キャッシュから天気情報を取得")
+                    Timber.tag(tag).i("キャッシュから天気情報を取得")
                     return@withContext cachedInfo.weatherData
                 }
 
@@ -72,7 +72,7 @@ class WeatherRepository {
                 
                 weatherResponse
             } catch (e: Exception) {
-                Timber.tag(TAG).e("Weather fetch failed: ${e.message}")
+                Timber.tag(tag).e("Weather fetch failed: ${e.message}")
                 null
             }
         }
@@ -90,14 +90,14 @@ class WeatherRepository {
                 if (goGeoResponseBody != null && goGeoResponseBody.locations.isNotEmpty()) {
                     // 最初の候補を使用
                     val firstLocation = goGeoResponseBody.locations.first()
-                    Timber.tag(TAG).i("Goサーバーから座標を取得: $address - 候補: ${goGeoResponseBody.locations.size}件")
+                    Timber.tag(tag).i("Goサーバーから座標を取得: $address - 候補: ${goGeoResponseBody.locations.size}件")
                     return Coordinates(firstLocation.latitude, firstLocation.longitude)
                 }
             }
             
             return null
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "座標取得に失敗: $address")
+            Timber.tag(tag).e(e, "座標取得に失敗: $address")
             return null
         }
     }
@@ -105,22 +105,22 @@ class WeatherRepository {
     // Goサーバーから天気情報を取得
     private suspend fun getWeatherFromGoServer(coordinates: Coordinates): WeatherResponse? {
         try {
-            Timber.tag(TAG)
+            Timber.tag(tag)
                 .i("Goサーバーから天気情報を取得: (${coordinates.latitude}, ${coordinates.longitude})")
             val response = weatherGoApi.getWeather(lat = coordinates.latitude, lon = coordinates.longitude)
             
             return if (response.isSuccessful) {
                 val goWeatherResponse = response.body()
                 if (goWeatherResponse != null) {
-                    Timber.tag(TAG).i("Goサーバーからの応答成功: ${goWeatherResponse.locationName}")
+                    Timber.tag(tag).i("Goサーバーからの応答成功: ${goWeatherResponse.locationName}")
                     // レスポンスをアプリのモデルに変換
                     WeatherResponseMapper.mapFromGoResponse(goWeatherResponse)
                 } else {
-                    Timber.tag(TAG).w("Goサーバーからのレスポンスが空")
+                    Timber.tag(tag).w("Goサーバーからのレスポンスが空")
                     null
                 }
             } else {
-                Timber.tag(TAG).w(
+                Timber.tag(tag).w(
                     "Goサーバーからの応答失敗: ${response.code()} - ${
                         response.errorBody()?.string()
                     }"
@@ -128,7 +128,7 @@ class WeatherRepository {
                 null
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Goサーバーからの天気情報取得に失敗")
+            Timber.tag(tag).e(e, "Goサーバーからの天気情報取得に失敗")
             return null
         }
     }
