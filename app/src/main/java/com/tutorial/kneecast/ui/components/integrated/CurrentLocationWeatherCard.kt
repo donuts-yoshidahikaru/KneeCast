@@ -13,6 +13,7 @@ import com.tutorial.kneecast.ui.components.WeatherScreen
 import com.tutorial.kneecast.ui.viewmodel.WeatherViewModel
 import com.tutorial.kneecast.ui.viewmodel.WeatherViewModelFactory
 import timber.log.Timber
+import android.location.Location
 
 /**
  * 現在地の天気情報を表示するカードコンポーネント
@@ -37,4 +38,20 @@ fun CurrentLocationWeatherCard(coordinates: Coordinates) {
     Box(modifier = Modifier.fillMaxWidth()) {
         WeatherScreen(weatherViewModel = weatherViewModel)
     }
+}
+
+/**
+ * Locationオブジェクトから現在地の天気情報を表示するカードコンポーネント
+ */
+@Composable
+fun CurrentLocationWeatherCard(location: Location?) {
+    if (location == null) {
+        return
+    }
+    
+    val coordinates = remember(location) {
+        Coordinates(location.latitude, location.longitude)
+    }
+    
+    CurrentLocationWeatherCard(coordinates)
 } 

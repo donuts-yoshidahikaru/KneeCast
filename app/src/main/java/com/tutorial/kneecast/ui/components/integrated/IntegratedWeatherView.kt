@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -22,6 +23,7 @@ import android.widget.Toast
 import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.repository.factory.SavedAddressRepositoryFactory
+import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherCard
 import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherViewModelFactory
 import com.tutorial.kneecast.ui.components.addressWeather.SuggestionItem
 import com.tutorial.kneecast.ui.components.addressWeather.SelectedAddressItem
@@ -173,6 +175,14 @@ class IntegratedWeatherView {
             }
         }
         
+        // 表示モード（現在地表示/住所リスト表示）
+        var displayMode by remember { mutableStateOf(if (isCurrentLocationSelected) DisplayMode.CURRENT_LOCATION else DisplayMode.SAVED_ADDRESSES) }
+        
+        // 現在地選択状態が変更されたらdisplayModeも更新
+        LaunchedEffect(isCurrentLocationSelected) {
+            displayMode = if (isCurrentLocationSelected) DisplayMode.CURRENT_LOCATION else DisplayMode.SAVED_ADDRESSES
+        }
+        
         Box(modifier = modifier) {
             // 住所検索と天気表示エリアのレイアウト
             Column(
@@ -181,18 +191,23 @@ class IntegratedWeatherView {
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 住所リスト表示エリア（現在地 + 選択された住所 + 追加ボタン）
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // 上部コントロールエリア（現在地ボタンと住所追加ボタン）
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 現在地アイテムを最初に表示
-                    item {
-                        CurrentLocationItem(
-                            isSelected = isCurrentLocationSelected,
-                            onClick = {
+                    // 現在地ボタン
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                            .clickable {
                                 // 現在地をアクティブにする
                                 isCurrentLocationSelected = true
+                                displayMode = DisplayMode.CURRENT_LOCATION
                                 // 住所の選択状態をクリア
                                 viewModel.clearCurrentAddress()
                                 // 現在地が選択されたことをログ
@@ -202,12 +217,89 @@ class IntegratedWeatherView {
                                 if (effectiveLocation == null) {
                                     locationViewModel.fetchLocation()
                                 }
-                            }
+                            },
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (displayMode == DisplayMode.CURRENT_LOCATION) 4.dp else 2.dp
+                        ),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (displayMode == DisplayMode.CURRENT_LOCATION) 
+                                MaterialTheme.colorScheme.primaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.surface
                         )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.LocationOn,
+                                contentDescription = "現在地",
+                                tint = if (displayMode == DisplayMode.CURRENT_LOCATION)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "現在地",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = 16.sp,
+                                color = if (displayMode == DisplayMode.CURRENT_LOCATION)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                     
-                    // 選択された住所リスト
-                    if (selectedAddresses.isNotEmpty()) {
+                    // 住所追加ボタン
+                    Card(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable(onClick = onAddAddressClick),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "追加",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "住所を追加",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // 保存された住所リスト（常に表示）
+                if (selectedAddresses.isNotEmpty()) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // 選択された住所リスト
                         items(selectedAddresses) { address ->
                             val isSelected = !isCurrentLocationSelected && address == currentSelectedAddress
                             
@@ -215,7 +307,7 @@ class IntegratedWeatherView {
                                 address = address,
                                 isSelected = isSelected,
                                 onClick = { 
-                                    // 住所を選択すると現在地選択状態は解除される
+                                    // 住所を選択する
                                     isCurrentLocationSelected = false
                                     viewModel.setCurrentAddress(address)
                                 },
@@ -224,69 +316,30 @@ class IntegratedWeatherView {
                         }
                     }
                     
-                    // 住所追加ボタンを最後に表示
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .wrapContentWidth()
-                                .padding(vertical = 4.dp)
-                                .clickable(onClick = onAddAddressClick),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(4.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = "追加",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "住所を追加",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontSize = 16.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
                 
-                Spacer(modifier = Modifier.height(24.dp))
+                // 天気情報表示エリア
+                Spacer(modifier = Modifier.height(8.dp))
                 
-                // 統合されたページャーで天気情報を表示
-                if (selectedAddresses.isNotEmpty() || isCurrentLocationSelected) {
+                // 天気情報表示
+                if (displayMode == DisplayMode.CURRENT_LOCATION && effectiveLocation != null) {
+                    // 現在地の天気を表示
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        IntegratedWeatherPager(
-                            addresses = selectedAddresses,
-                            currentSelectedAddress = currentSelectedAddress,
-                            currentLocation = effectiveLocation,
-                            isCurrentLocationSelected = isCurrentLocationSelected,
-                            onAddressSelected = { feature ->
-                                if (CurrentLocationFeature.isCurrentLocation(feature)) {
-                                    // 現在地が選択された
-                                    isCurrentLocationSelected = true
-                                    viewModel.clearCurrentAddress()
-                                } else {
-                                    // 住所が選択された
-                                    isCurrentLocationSelected = false
-                                    // 選択された住所をリストから探して設定
-                                    selectedAddresses.find { it.name == feature.name }?.let {
-                                        viewModel.setCurrentAddress(it)
-                                    }
-                                }
-                            }
+                        CurrentLocationWeatherCard(
+                            location = effectiveLocation
                         )
+                    }
+                } else if (displayMode == DisplayMode.SAVED_ADDRESSES && selectedAddresses.isNotEmpty()) {
+                    // 選択された住所の天気をページャーで表示
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        if (currentSelectedAddress != null) {
+                            // 現在選択中の住所の天気を表示
+                            AddressWeatherCard(currentSelectedAddress!!)
+                        } else if (selectedAddresses.isNotEmpty()) {
+                            // デフォルトで最初の住所を表示
+                            AddressWeatherCard(selectedAddresses.first())
+                        }
                     }
                 } else {
                     // 何も選択されていない場合のメッセージ
@@ -308,5 +361,11 @@ class IntegratedWeatherView {
                 )
             }
         }
+    }
+    
+    // 表示モードを表す列挙型
+    enum class DisplayMode {
+        CURRENT_LOCATION,  // 現在地表示モード
+        SAVED_ADDRESSES    // 保存済み住所表示モード
     }
 } 
