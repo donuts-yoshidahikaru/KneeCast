@@ -6,6 +6,7 @@ import com.tutorial.kneecast.data.model.Feature
 import timber.log.Timber
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,14 +16,14 @@ import kotlinx.coroutines.launch
  */
 class SavedAddressRepository(
     private val savedAddressDao: SavedAddressDao,
-    private val context: Context? = null
+    context: Context? = null
 ) {
     // 選択状態を保存するSharedPreferences
     private val prefs: SharedPreferences? = context?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     
     // コルーチンスコープ
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    
+
     companion object {
         private const val PREFS_NAME = "kneecast_location_prefs"
         private const val KEY_CURRENT_LOCATION_SELECTED = "is_current_location_selected"
@@ -34,14 +35,14 @@ class SavedAddressRepository(
      * 現在地が選択されているかどうかを取得
      */
     fun isCurrentLocationSelected(): Boolean {
-        return prefs?.getBoolean(KEY_CURRENT_LOCATION_SELECTED, false) ?: false
+        return prefs?.getBoolean(KEY_CURRENT_LOCATION_SELECTED, false) == true
     }
     
     /**
      * 現在地の選択状態を設定
      */
     fun setCurrentLocationSelected(selected: Boolean) {
-        prefs?.edit()?.putBoolean(KEY_CURRENT_LOCATION_SELECTED, selected)?.apply()
+        prefs?.edit { putBoolean(KEY_CURRENT_LOCATION_SELECTED, selected) }
         
         if (selected) {
             // 現在地を選択した場合は、住所の選択状態をクリア（コルーチン内で実行）
@@ -57,10 +58,10 @@ class SavedAddressRepository(
      * 最後に取得した位置情報を保存
      */
     fun saveLastKnownLocation(latitude: Double, longitude: Double) {
-        prefs?.edit()
-            ?.putFloat(KEY_LAST_KNOWN_LAT, latitude.toFloat())
-            ?.putFloat(KEY_LAST_KNOWN_LON, longitude.toFloat())
-            ?.apply()
+        prefs?.edit {
+            putFloat(KEY_LAST_KNOWN_LAT, latitude.toFloat())
+            putFloat(KEY_LAST_KNOWN_LON, longitude.toFloat())
+        }
         
         Timber.d("最後に取得した位置情報を保存: $latitude, $longitude")
     }

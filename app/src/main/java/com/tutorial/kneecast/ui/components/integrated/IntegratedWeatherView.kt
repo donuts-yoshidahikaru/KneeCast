@@ -1,7 +1,6 @@
 package com.tutorial.kneecast.ui.components.integrated
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,12 +19,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tutorial.kneecast.ui.viewmodel.AddressWeatherViewModel
 import android.location.Location
 import android.widget.Toast
-import com.tutorial.kneecast.data.model.Coordinates
 import com.tutorial.kneecast.data.model.Feature
 import com.tutorial.kneecast.data.repository.factory.SavedAddressRepositoryFactory
 import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherCard
 import com.tutorial.kneecast.ui.components.addressWeather.AddressWeatherViewModelFactory
-import com.tutorial.kneecast.ui.components.addressWeather.SuggestionItem
 import com.tutorial.kneecast.ui.components.addressWeather.SelectedAddressItem
 import com.tutorial.kneecast.ui.viewmodel.provideLocationViewModel
 import timber.log.Timber

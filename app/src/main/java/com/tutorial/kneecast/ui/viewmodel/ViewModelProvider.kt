@@ -22,11 +22,3 @@ fun provideLocationViewModel(): LocationViewModel {
     
     return viewModel
 }
-
-/**
- * Compose関数内でWeatherViewModelを取得するためのヘルパー関数
- */
-@Composable
-fun provideWeatherViewModel(): WeatherViewModel {
-    return viewModel()
-} 
