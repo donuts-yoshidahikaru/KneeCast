@@ -31,6 +31,10 @@ import com.tutorial.kneecast.ui.viewmodel.provideLocationViewModel
 import timber.log.Timber
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 // 表示モードを表す列挙型
 enum class DisplayMode {
@@ -69,6 +73,9 @@ fun IntegratedWeatherView(
     onAddAddressClick: () -> Unit = {} // 住所追加ボタンクリック時のコールバック
 ) {
     val context = LocalContext.current
+    
+    // コルーチンスコープを取得
+    val coroutineScope = rememberCoroutineScope()
     
     // SavedAddressRepositoryを初期化
     val savedAddressRepository = remember { 
@@ -188,6 +195,61 @@ fun IntegratedWeatherView(
         displayMode = if (isCurrentLocationSelected) DisplayMode.CURRENT_LOCATION else DisplayMode.SAVED_ADDRESSES
     }
     
+    // ページャー用の全アイテムリストを作成（現在地＋保存済み住所）
+    val allItems = remember(selectedAddresses, effectiveLocation, isCurrentLocationSelected) {
+        buildList {
+            if (effectiveLocation != null) {
+                add(WeatherItem.CurrentLocation(effectiveLocation))
+            }
+            selectedAddresses.forEach { address ->
+                add(WeatherItem.SavedAddress(address))
+            }
+        }
+    }
+    
+    // 現在選択中のインデックスを計算
+    val initialPage = remember(allItems, isCurrentLocationSelected, currentSelectedAddress) {
+        when {
+            isCurrentLocationSelected -> 0 // 現在地は常に先頭
+            currentSelectedAddress != null -> {
+                // 現在選択中の住所のインデックスを検索
+                val addressIndex = selectedAddresses.indexOf(currentSelectedAddress)
+                if (addressIndex != -1) {
+                    // 現在地がある場合は+1する（現在地の後ろに住所リストが続く）
+                    if (effectiveLocation != null) addressIndex + 1 else addressIndex
+                } else {
+                    // 見つからない場合は現在地を表示
+                    0
+                }
+            }
+            else -> 0
+        }
+    }
+    
+    // ページャーの状態を管理
+    val pagerState = rememberPagerState(initialPage = initialPage) { allItems.size }
+    
+    // ページが変わったら選択状態を更新
+    LaunchedEffect(pagerState.currentPage) {
+        if (allItems.isEmpty()) return@LaunchedEffect
+        
+        val currentItem = allItems[pagerState.currentPage]
+        when (currentItem) {
+            is WeatherItem.CurrentLocation -> {
+                if (!isCurrentLocationSelected) {
+                    isCurrentLocationSelected = true
+                    viewModel.clearCurrentAddress()
+                }
+            }
+            is WeatherItem.SavedAddress -> {
+                if (isCurrentLocationSelected || currentSelectedAddress != currentItem.address) {
+                    isCurrentLocationSelected = false
+                    viewModel.setCurrentAddress(currentItem.address)
+                }
+            }
+        }
+    }
+    
     Box(modifier = modifier) {
         // 住所検索と天気表示エリアのレイアウト
         Column(
@@ -221,6 +283,13 @@ fun IntegratedWeatherView(
                             // 位置情報が古いまたは取得できていない場合は再取得
                             if (effectiveLocation == null) {
                                 locationViewModel.fetchLocation()
+                            }
+                            
+                            // ページャーを現在地（先頭）に移動 - コルーチンスコープで実行
+                            if (allItems.isNotEmpty()) {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(0)
+                                }
                             }
                         },
                     elevation = CardDefaults.cardElevation(
@@ -315,6 +384,16 @@ fun IntegratedWeatherView(
                                 // 住所を選択する
                                 isCurrentLocationSelected = false
                                 viewModel.setCurrentAddress(address)
+                                
+                                // ページャーをこの住所のページに移動 - コルーチンスコープで実行
+                                val addressIndex = selectedAddresses.indexOf(address)
+                                if (addressIndex != -1) {
+                                    // 現在地がある場合は+1する
+                                    val pageIndex = if (effectiveLocation != null) addressIndex + 1 else addressIndex
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(pageIndex)
+                                    }
+                                }
                             },
                             onRemove = { viewModel.removeAddress(address) }
                         )
@@ -327,23 +406,21 @@ fun IntegratedWeatherView(
             // 天気情報表示エリア
             Spacer(modifier = Modifier.height(8.dp))
             
-            // 天気情報表示
-            if (displayMode == DisplayMode.CURRENT_LOCATION && effectiveLocation != null) {
-                // 現在地の天気を表示
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    CurrentLocationWeatherCard(
-                        location = effectiveLocation
-                    )
-                }
-            } else if (displayMode == DisplayMode.SAVED_ADDRESSES && selectedAddresses.isNotEmpty()) {
-                // 選択された住所の天気をページャーで表示
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (currentSelectedAddress != null) {
-                        // 現在選択中の住所の天気を表示
-                        AddressWeatherCard(currentSelectedAddress!!)
-                    } else if (selectedAddresses.isNotEmpty()) {
-                        // デフォルトで最初の住所を表示
-                        AddressWeatherCard(selectedAddresses.first())
+            // 天気情報をHorizontalPagerで表示
+            if (allItems.isNotEmpty()) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth()
+                ) { page ->
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        when (val item = allItems[page]) {
+                            is WeatherItem.CurrentLocation -> {
+                                CurrentLocationWeatherCard(location = item.location)
+                            }
+                            is WeatherItem.SavedAddress -> {
+                                AddressWeatherCard(item.address)
+                            }
+                        }
                     }
                 }
             } else {
@@ -366,4 +443,12 @@ fun IntegratedWeatherView(
             )
         }
     }
+}
+
+/**
+ * ページャーで表示する天気アイテムを表す密封クラス
+ */
+sealed class WeatherItem {
+    data class CurrentLocation(val location: Location) : WeatherItem()
+    data class SavedAddress(val address: Feature) : WeatherItem()
 } 
