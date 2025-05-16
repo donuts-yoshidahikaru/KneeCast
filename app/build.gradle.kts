@@ -33,15 +33,6 @@ android {
         buildConfigField("String", "YAHOO_CLIENT_ID", "\"${localProperties["YAHOO_CLIENT_ID"]}\"")
         buildConfigField("String", "METEOSOURCE_API_KEY", "\"${localProperties["METEOSOURCE_API_KEY"]}\"")
 
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += mapOf(
-                    "room.schemaLocation" to "$projectDir/schemas",
-                    "room.incremental" to "true",
-                    "room.expandProjection" to "true"
-                )
-            }
-        }
         sourceSets {
             getByName("androidTest") {
                 assets {
@@ -72,6 +63,12 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+    // arg("room.expandProjection", "true")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -81,7 +78,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.navigation.compose)
+    implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation(libs.play.services.location)
 
     implementation(libs.androidx.runtime.livedata)
