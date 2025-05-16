@@ -14,7 +14,6 @@ class WeatherViewModel : ViewModel() {
 
     // 天気情報取得中の状態を表す LiveData（オプションで UI にローディング表示を出すため）
     private val _loading = MutableLiveData<Boolean>()
-    val loading: LiveData<Boolean> get() = _loading
 
     // 成功時の WeatherResponse を保持する LiveData
     private val _weatherResponse = MutableLiveData<WeatherResponse?>()

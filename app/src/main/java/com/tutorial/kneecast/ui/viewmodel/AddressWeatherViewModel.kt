@@ -63,6 +63,10 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
     // 入力テキストを更新
     fun updateAddressInput(input: String) {
         _addressInput.value = input
+        // 入力が空か1文字以下の場合は候補リストをクリア
+        if (input.length < 2) {
+            _addressSuggestions.value = emptyList()
+        }
     }
     
     // 候補住所を取得
@@ -208,6 +212,25 @@ class AddressWeatherViewModel(private val savedAddressRepository: SavedAddressRe
             Timber.e(e, "Failed to load saved addresses")
         } finally {
             _isLoading.value = false
+        }
+    }
+
+    // 現在選択中の住所をクリア
+    fun clearCurrentAddress() {
+        viewModelScope.launch {
+            try {
+                // 選択状態を解除
+                _currentSelectedAddress.value = null
+                
+                // データベース上でも選択状態を解除する
+                // 注：実装によっては不要な場合もある
+                savedAddressRepository.clearSelectedAddress()
+                
+                Timber.d("現在選択中の住所をクリアしました")
+            } catch (e: Exception) {
+                _error.value = "選択住所のクリアに失敗しました: ${e.localizedMessage}"
+                Timber.e(e, "Failed to clear current address")
+            }
         }
     }
 } 
