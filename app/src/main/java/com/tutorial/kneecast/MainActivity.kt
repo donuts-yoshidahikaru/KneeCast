@@ -3,45 +3,59 @@ package com.tutorial.kneecast
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.tutorial.kneecast.ui.theme.KneeCastTheme
+import com.tutorial.kneecast.app.AppInitializer
+import com.tutorial.kneecast.ui.LocalAppContext
+import com.tutorial.kneecast.ui.LocalAppInitializer
+import com.tutorial.kneecast.ui.components.MainScreen
 
+/**
+ * アプリケーションのメインアクティビティ
+ * UI表示とアプリケーションの起動処理のみを担当します
+ */
 class MainActivity : ComponentActivity() {
+
+    // アプリケーション初期化クラス
+    private lateinit var appInitializer: AppInitializer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        
+        // アプリケーションの初期化
+        initializeApp()
+        
+        // UIのセットアップ
+        setupUI()
+    }
+    
+    /**
+     * アプリケーションの初期化
+     */
+    private fun initializeApp() {
+        appInitializer = AppInitializer(this)
+        appInitializer.initialize()
+    }
+    
+    /**
+     * UIのセットアップ
+     */
+    private fun setupUI() {
         setContent {
-            KneeCastTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            MaterialTheme {
+                // CompositionLocalProviderでContextとAppInitializerを提供
+                CompositionLocalProvider(
+                    LocalAppContext provides this,
+                    LocalAppInitializer provides appInitializer
+                ) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        MainScreen()
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    KneeCastTheme {
-        Greeting("Android")
     }
 }

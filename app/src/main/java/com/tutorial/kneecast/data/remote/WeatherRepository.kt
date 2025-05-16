@@ -1,0 +1,95 @@
+package com.tutorial.kneecast.data.remote
+
+import com.tutorial.kneecast.data.model.Coordinates
+import com.tutorial.kneecast.data.model.WeatherResponse
+import com.tutorial.kneecast.network.RetrofitFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+
+class WeatherRepository {
+
+    // Yahoo!ジオコーダAPIのベースURL
+    private val geocoderBaseUrl = "https://map.yahooapis.jp/"
+
+    // Meteosource天気APIのベースURL
+    private val weatherBaseUrl = "https://www.meteosource.com/"
+
+    private val geocoderApi: GeocoderApi = RetrofitFactory
+        .createRetrofitInstance(geocoderBaseUrl)
+        .create(GeocoderApi::class.java)
+
+
+    private val weatherApi: WeatherApi = RetrofitFactory
+        .createRetrofitInstance(weatherBaseUrl)
+        .create(WeatherApi::class.java)
+
+
+    // メモリキャッシュの実装
+    private val weatherCache = mutableMapOf<String, CachedWeatherInfo>()
+    
+    // キャッシュ有効期間（10分 = 10 * 60 * 1000ミリ秒）
+    private val cacheExpirationMs = 10 * 60 * 1000L
+    
+    // キャッシュデータを格納するデータクラス
+    private data class CachedWeatherInfo(
+        val weatherData: WeatherResponse,
+        val timestamp: Long
+    )
+    
+    // キャッシュキーを生成するヘルパーメソッド
+    private fun generateCacheKey(address: String?, coords: Coordinates?): String {
+        return when {
+            coords != null -> "coords_${coords.latitude}_${coords.longitude}"
+            address != null -> "address_$address"
+            else -> throw IllegalArgumentException("住所または座標が必要です")
+        }
+    }
+
+    suspend fun fetchWeatherInfo(address: String?, coords: Coordinates?): WeatherResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // キャッシュキーを生成
+                val cacheKey = generateCacheKey(address, coords)
+                
+                // キャッシュをチェック
+                val cachedInfo = weatherCache[cacheKey]
+                val now = System.currentTimeMillis()
+                
+                // キャッシュが有効な場合はキャッシュからデータを返す
+                if (cachedInfo != null && (now - cachedInfo.timestamp) < cacheExpirationMs) {
+                    return@withContext cachedInfo.weatherData
+                }
+
+                // キャッシュがない場合は新しくデータを取得
+                val coordinates = coords ?: getCoordinatesFromAddress(address) ?: return@withContext null
+                val weatherResponse = getWeatherFromCoordinates(coordinates)
+                
+                // 取得に成功したらキャッシュに保存
+                if (weatherResponse != null) {
+                    weatherCache[cacheKey] = CachedWeatherInfo(weatherResponse, now)
+                }
+                
+                weatherResponse
+            } catch (e: Exception) {
+                Timber.tag("WeatherRepository").e(e, "Weather fetch failed")
+                null
+            }
+        }
+    }
+
+    private suspend fun getCoordinatesFromAddress(address: String?): Coordinates? {
+        if (address == null) return null
+        val geoResponse = geocoderApi.getCoordinates(address = address)
+        if (!geoResponse.isSuccessful) return null
+
+        val geoResponseBody = geoResponse.body() ?: return null
+        val coordinates: String = geoResponseBody.feature[0].geometry.coordinates
+        return Coordinates(coordinates[0].code.toDouble(), coordinates[1].code.toDouble())
+    }
+
+    private suspend fun getWeatherFromCoordinates(coordinates: Coordinates): WeatherResponse? {
+        val weatherResponse = weatherApi.getWeather(lon = coordinates.longitude, lat = coordinates.latitude)
+        return if (weatherResponse.isSuccessful) weatherResponse.body() else null
+    }
+}
