@@ -1,81 +1,73 @@
 package com.tutorial.kneecast.data.mapper
 
-import com.tutorial.kneecast.data.model.DailyData
-import com.tutorial.kneecast.data.model.DailySubWeather
-import com.tutorial.kneecast.data.model.DailyWeather
-import com.tutorial.kneecast.data.model.GoDailyData
-import com.tutorial.kneecast.data.model.GoWeatherResponse
-import com.tutorial.kneecast.data.model.WeatherResponse
+// Removed data model imports: DailyData, DailySubWeather, DailyWeather, WeatherResponse
+import com.tutorial.kneecast.data.model.GoDailyData // Keep for input type
+import com.tutorial.kneecast.data.model.GoWeatherResponse // Keep for input type
+import com.tutorial.kneecast.domain.entity.DailyForecast // Added domain entity import
+import com.tutorial.kneecast.domain.entity.WeatherInfo // Added domain entity import
 
 /**
- * GoサーバーのレスポンスをアプリのWeatherResponseモデルに変換するマッパー
+ * GoサーバーのレスポンスをドメインのWeatherInfoモデルに変換するマッパー
  */
 object WeatherResponseMapper {
 
     /**
-     * GoWeatherResponseをアプリで使用するWeatherResponseに変換
-     * サーバーから返される7日間の天気予報データを処理
+     * GoWeatherResponseをドメインで使用するWeatherInfoに変換
+     * サーバーから返される7日間の天気予報データ、または単一日データを処理
      */
-    fun mapFromGoResponse(goResponse: GoWeatherResponse): WeatherResponse {
-        // daily（7日間）のデータがある場合はそれを使用
+    fun mapFromGoResponse(goResponse: GoWeatherResponse): WeatherInfo {
+        val dailyForecasts: List<DailyForecast>
+
         if (goResponse.daily != null) {
-            // サーバーからの7日間データを変換
-            val dailyDataList = goResponse.daily.data.map { goDailyData ->
-                mapGoDailyDataToDailyData(goDailyData)
+            // daily（7日間）のデータがある場合はそれを使用
+            dailyForecasts = goResponse.daily.data.map { goDailyData ->
+                mapGoDailyDataToDomainDailyForecast(goDailyData)
             }
-            
-            return WeatherResponse(
-                daily = DailyWeather(data = dailyDataList)
+        } else {
+            // 後方互換性: dailyフィールドがない古い形式の場合、単一日のデータを作成
+            val weatherIcon = mapWeatherSummaryToIcon(goResponse.weatherSummary)
+            val singleForecast = DailyForecast(
+                date = goResponse.targetDate, // Assuming targetDate is not null for old format
+                iconId = weatherIcon,
+                minTemp = goResponse.temperatureMin ?: 0.0,
+                maxTemp = goResponse.temperatureMax ?: 0.0
+                // Note: Other fields in DailyForecast might not be available from old format
             )
+            dailyForecasts = listOf(singleForecast)
         }
         
-        // 以下は後方互換性のために残す（dailyフィールドがない古い形式の場合）
-        // 単一日のデータを作成（古い形式のサーバーレスポンス用）
-        val weatherIcon = mapWeatherSummaryToIcon(goResponse.weatherSummary)
-        val dayString = goResponse.targetDate
-        
-        val dailySubWeather = DailySubWeather(
-            icon = weatherIcon,
-            temperatureMin = goResponse.temperatureMin ?: 0.0,
-            temperatureMax = goResponse.temperatureMax ?: 0.0
-        )
-        
-        val dailyData = DailyData(
-            day = dayString,
-            allDay = dailySubWeather
-        )
-        
-        return WeatherResponse(
-            daily = DailyWeather(data = listOf(dailyData))
+        return WeatherInfo(
+            locationName = goResponse.locationName, // Map locationName
+            dailyForecasts = dailyForecasts
         )
     }
     
     /**
-     * GoサーバーからのDailyDataをアプリのDailyDataに変換
+     * GoサーバーからのGoDailyDataをドメインのDailyForecastに変換
      */
-    private fun mapGoDailyDataToDailyData(goDailyData: GoDailyData): DailyData {
-        return DailyData(
-            day = goDailyData.day,
-            allDay = DailySubWeather(
-                icon = goDailyData.allDay.icon,
-                temperatureMin = goDailyData.allDay.temperatureMin,
-                temperatureMax = goDailyData.allDay.temperatureMax
-            )
+    private fun mapGoDailyDataToDomainDailyForecast(goDailyData: GoDailyData): DailyForecast {
+        return DailyForecast(
+            date = goDailyData.day,
+            iconId = goDailyData.allDay.icon,
+            minTemp = goDailyData.allDay.temperatureMin,
+            maxTemp = goDailyData.allDay.temperatureMax
+            // Note: Other fields in DailyForecast might not be available or need default values
         )
     }
 
     /**
      * 天気概要テキストをアイコンIDに変換
+     * (This function remains the same as provided in the problem description)
      */
     private fun mapWeatherSummaryToIcon(weatherSummary: String?): Int {
         return when {
-            weatherSummary == null -> 1 // デフォルト：晴れ
-            weatherSummary.contains("晴") -> 1
-            weatherSummary.contains("曇") -> 3
-            weatherSummary.contains("雨") -> 4
-            weatherSummary.contains("雪") -> 5
-            weatherSummary.contains("嵐") || weatherSummary.contains("雷") -> 8
-            else -> 1 // デフォルト：晴れ
+            weatherSummary == null -> 1 // デフォルト：晴れ (Default: Sunny)
+            weatherSummary.contains("晴") -> 1 // Sunny
+            weatherSummary.contains("曇") -> 3 // Cloudy
+            weatherSummary.contains("雨") -> 4 // Rain
+            weatherSummary.contains("雪") -> 5 // Snow
+            weatherSummary.contains("嵐") || weatherSummary.contains("雷") -> 8 // Storm or Thunder
+            else -> 1 // デフォルト：晴れ (Default: Sunny)
         }
     }
-} 
+}

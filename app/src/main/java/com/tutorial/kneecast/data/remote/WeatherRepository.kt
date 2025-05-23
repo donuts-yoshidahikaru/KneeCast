@@ -1,21 +1,19 @@
 package com.tutorial.kneecast.data.remote
 
-import com.tutorial.kneecast.data.mapper.WeatherResponseMapper
-import com.tutorial.kneecast.data.model.Coordinates
-import com.tutorial.kneecast.data.model.WeatherResponse
+import com.tutorial.kneecast.data.mapper.WeatherResponseMapper // Ensure this import is correct
+import com.tutorial.kneecast.domain.entity.Coordinates
+import com.tutorial.kneecast.domain.entity.WeatherInfo
+import com.tutorial.kneecast.domain.repository.WeatherRepository as DomainWeatherRepository // Alias to avoid name clash
+import com.tutorial.kneecast.domain.common.Result
 import com.tutorial.kneecast.network.RetrofitFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.lang.Exception // Explicit import for Result.Error
 
-class WeatherRepository {
+class WeatherRepository : DomainWeatherRepository { // Implement the domain interface
 
     private val tag = "Weather-Repository"
-
-    // GeocoderAPI - 住所から座標を取得するために使用
-    private val geocoderGoApi: GeocoderGoApi = RetrofitFactory
-        .createGoServerRetrofitInstance()
-        .create(GeocoderGoApi::class.java)
 
     // Goサーバー用のWeatherAPI
     private val weatherGoApi: WeatherGoApi = RetrofitFactory
@@ -28,26 +26,22 @@ class WeatherRepository {
     // キャッシュ有効期間（10分 = 10 * 60 * 1000ミリ秒）
     private val cacheExpirationMs = 10 * 60 * 1000L
     
-    // キャッシュデータを格納するデータクラス
+    // キャッシュデータを格納するデータクラス (updated to use domain entity)
     private data class CachedWeatherInfo(
-        val weatherData: WeatherResponse,
+        val weatherData: WeatherInfo, // Changed from data.model.WeatherResponse
         val timestamp: Long
     )
     
-    // キャッシュキーを生成するヘルパーメソッド
-    private fun generateCacheKey(address: String?, coords: Coordinates?): String {
-        return when {
-            coords != null -> "coords_${coords.latitude}_${coords.longitude}"
-            address != null -> "address_$address"
-            else -> throw IllegalArgumentException("住所または座標が必要です")
-        }
+    // キャッシュキーを生成するヘルパーメソッド (updated for domain Coordinates)
+    private fun generateCacheKey(coords: Coordinates): String {
+        return "coords_${coords.latitude}_${coords.longitude}"
     }
 
-    suspend fun fetchWeatherInfo(address: String?, coords: Coordinates?): WeatherResponse? {
+    override suspend fun getWeather(coordinates: Coordinates): Result<WeatherInfo> {
         return withContext(Dispatchers.IO) {
             try {
                 // キャッシュキーを生成
-                val cacheKey = generateCacheKey(address, coords)
+                val cacheKey = generateCacheKey(coordinates)
                 
                 // キャッシュをチェック
                 val cachedInfo = weatherCache[cacheKey]
@@ -56,54 +50,29 @@ class WeatherRepository {
                 // キャッシュが有効な場合はキャッシュからデータを返す
                 if (cachedInfo != null && (now - cachedInfo.timestamp) < cacheExpirationMs) {
                     Timber.tag(tag).i("キャッシュから天気情報を取得")
-                    return@withContext cachedInfo.weatherData
+                    return@withContext Result.Success(cachedInfo.weatherData)
                 }
 
                 // キャッシュがない場合は新しくデータを取得
-                val coordinates = coords ?: getCoordinatesFromAddress(address) ?: return@withContext null
-                
-                // GoサーバーからWeather情報を取得
-                val weatherResponse = getWeatherFromGoServer(coordinates)
+                // GoサーバーからWeather情報を取得 (updated to use domain Coordinates)
+                val weatherResponseResult = getWeatherFromGoServer(coordinates) // This now returns Result<WeatherInfo>
                 
                 // 取得に成功したらキャッシュに保存
-                if (weatherResponse != null) {
-                    weatherCache[cacheKey] = CachedWeatherInfo(weatherResponse, now)
+                if (weatherResponseResult is Result.Success) {
+                    weatherCache[cacheKey] = CachedWeatherInfo(weatherResponseResult.data, now)
+                    Timber.tag(tag).i("サーバーから取得した天気情報をキャッシュに保存")
                 }
                 
-                weatherResponse
+                weatherResponseResult // Return the Result (Success or Error)
             } catch (e: Exception) {
-                Timber.tag(tag).e("Weather fetch failed: ${e.message}")
-                null
+                Timber.tag(tag).e(e, "Weather fetch failed in getWeather")
+                Result.Error("Weather fetch failed: ${e.message}", e)
             }
         }
     }
 
-    private suspend fun getCoordinatesFromAddress(address: String?): Coordinates? {
-        if (address == null) return null
-        
-        try {
-            // Goサーバーから座標を取得
-            val geoResponse = geocoderGoApi.getCoordinatesFromGoServer(address = address)
-            
-            if (geoResponse.isSuccessful) {
-                val goGeoResponseBody = geoResponse.body()
-                if (goGeoResponseBody != null && goGeoResponseBody.locations.isNotEmpty()) {
-                    // 最初の候補を使用
-                    val firstLocation = goGeoResponseBody.locations.first()
-                    Timber.tag(tag).i("Goサーバーから座標を取得: $address - 候補: ${goGeoResponseBody.locations.size}件")
-                    return Coordinates(firstLocation.latitude, firstLocation.longitude)
-                }
-            }
-            
-            return null
-        } catch (e: Exception) {
-            Timber.tag(tag).e(e, "座標取得に失敗: $address")
-            return null
-        }
-    }
-
-    // Goサーバーから天気情報を取得
-    private suspend fun getWeatherFromGoServer(coordinates: Coordinates): WeatherResponse? {
+    // Goサーバーから天気情報を取得 (updated to use domain Coordinates and return Result<WeatherInfo>)
+    private suspend fun getWeatherFromGoServer(coordinates: Coordinates): Result<WeatherInfo> {
         try {
             Timber.tag(tag)
                 .i("Goサーバーから天気情報を取得: (${coordinates.latitude}, ${coordinates.longitude})")
@@ -113,23 +82,23 @@ class WeatherRepository {
                 val goWeatherResponse = response.body()
                 if (goWeatherResponse != null) {
                     Timber.tag(tag).i("Goサーバーからの応答成功: ${goWeatherResponse.locationName}")
-                    // レスポンスをアプリのモデルに変換
-                    WeatherResponseMapper.mapFromGoResponse(goWeatherResponse)
+                    // Use WeatherResponseMapper to map to domain entity
+                    val domainWeatherInfo = WeatherResponseMapper.mapFromGoResponse(goWeatherResponse)
+                    Result.Success(domainWeatherInfo)
                 } else {
                     Timber.tag(tag).w("Goサーバーからのレスポンスが空")
-                    null
+                    Result.Error("Go server response body is null")
                 }
             } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
                 Timber.tag(tag).w(
-                    "Goサーバーからの応答失敗: ${response.code()} - ${
-                        response.errorBody()?.string()
-                    }"
+                    "Goサーバーからの応答失敗: ${response.code()} - $errorBody"
                 )
-                null
+                Result.Error("Go server request failed: ${response.code()} - $errorBody")
             }
         } catch (e: Exception) {
             Timber.tag(tag).e(e, "Goサーバーからの天気情報取得に失敗")
-            return null
+            return Result.Error("Failed to fetch weather from Go server: ${e.message}", e)
         }
     }
 }

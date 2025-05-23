@@ -1,38 +1,45 @@
 package com.tutorial.kneecast.data.mapper
 
-import com.tutorial.kneecast.data.local.entity.SavedAddress
-import com.tutorial.kneecast.data.model.Feature
-import com.tutorial.kneecast.data.model.Geometry
+// Import aliases for clarity
+import com.tutorial.kneecast.data.local.entity.SavedAddress as DbSavedAddress
+import com.tutorial.kneecast.domain.entity.Coordinates as DomainCoordinates
+import com.tutorial.kneecast.domain.entity.SavedAddress as DomainSavedAddress
 
 object AddressMapper {
 
-    fun fromFeature(feature: Feature, isSelected: Boolean = false): SavedAddress {
-        val (longitude, latitude) = feature.geometry.coordinates
-            .split(",")
-            .map { it.trim().toDouble() }
-        
-        return SavedAddress(
-            addressName = feature.name,
-            latitude = latitude,
-            longitude = longitude,
-            isSelected = isSelected
-        )
-    }
-
-    fun toFeature(savedAddress: SavedAddress): Feature {
-        return Feature(
-            name = savedAddress.addressName,
-            geometry = Geometry(
-                coordinates = "${savedAddress.longitude},${savedAddress.latitude}"
+    fun mapDbEntityToDomain(dbEntity: DbSavedAddress): DomainSavedAddress {
+        return DomainSavedAddress(
+            id = dbEntity.id,
+            name = dbEntity.addressName,
+            address = dbEntity.addressName, // Map addressName to both name and address in domain
+            coordinates = DomainCoordinates(
+                latitude = dbEntity.latitude,
+                longitude = dbEntity.longitude
             )
+            // dbEntity.isSelected and dbEntity.createdAt are not mapped to the domain entity
         )
     }
 
-    fun toFeatures(savedAddresses: List<SavedAddress>): List<Feature> {
-        return savedAddresses.map { toFeature(it) }
+    fun mapDomainToDbEntity(
+        domainEntity: DomainSavedAddress,
+        isSelected: Boolean? = null
+    ): DbSavedAddress {
+        return DbSavedAddress(
+            id = domainEntity.id,
+            addressName = domainEntity.name, // domainEntity.address is not persisted if different from name
+            latitude = domainEntity.coordinates.latitude,
+            longitude = domainEntity.coordinates.longitude,
+            isSelected = isSelected ?: false
+            // createdAt is handled by DbSavedAddress default
+        )
     }
 
-//    fun fromFeatures(features: List<Feature>, isSelected: Boolean = false): List<SavedAddress> {
-//        return features.map { fromFeature(it, isSelected) }
-//    }
+    fun mapDbEntityListToDomainList(dbEntities: List<DbSavedAddress>): List<DomainSavedAddress> {
+        return dbEntities.map { mapDbEntityToDomain(it) }
+    }
+    
+    // A mapDomainListToDbList could be added if needed, for example:
+    // fun mapDomainListToDbList(domainEntities: List<DomainSavedAddress>, isSelected: Boolean? = null): List<DbSavedAddress> {
+    //     return domainEntities.map { mapDomainToDbEntity(it, isSelected) }
+    // }
 }
