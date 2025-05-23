@@ -1,210 +1,90 @@
 package com.tutorial.kneecast.data.repository
 
 import com.tutorial.kneecast.data.local.dao.SavedAddressDao
-import com.tutorial.kneecast.data.mapper.AddressMapper
-import com.tutorial.kneecast.data.model.Feature
-import timber.log.Timber
-import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import com.tutorial.kneecast.domain.repository.SavedAddressRepository as DomainSavedAddressRepository
+import com.tutorial.kneecast.domain.entity.SavedAddress as DomainSavedAddress
+// Removed DomainCoordinates import as it's part of DomainSavedAddress
+// import com.tutorial.kneecast.data.local.entity.SavedAddress as DbSavedAddress // Alias for DB entity - No longer needed here if mappers are used
+import com.tutorial.kneecast.data.mapper.AddressMapper // Import the finalized AddressMapper
+import com.tutorial.kneecast.domain.common.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+// import kotlinx.coroutines.flow.flow // Not used as DAO returns Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+import java.lang.Exception
 
 /**
- * 保存された住所と現在地の選択状態を管理するリポジトリ
+ * 保存された住所を管理するリポジトリ (Domain Interface Implementation)
  */
 class SavedAddressRepository(
-    private val savedAddressDao: SavedAddressDao,
-    context: Context? = null
-) {
-    // 選択状態を保存するSharedPreferences
-    private val prefs: SharedPreferences? = context?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val savedAddressDao: SavedAddressDao
+) : DomainSavedAddressRepository {
     
-    // コルーチンスコープ
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val tag = "Data-SavedAddressRepo"
 
-    companion object {
-        private const val PREFS_NAME = "kneecast_location_prefs"
-        private const val KEY_CURRENT_LOCATION_SELECTED = "is_current_location_selected"
-        private const val KEY_LAST_KNOWN_LAT = "last_known_latitude"
-        private const val KEY_LAST_KNOWN_LON = "last_known_longitude"
-    }
-    
-    /**
-     * 現在地が選択されているかどうかを取得
-     */
-    fun isCurrentLocationSelected(): Boolean {
-        return prefs?.getBoolean(KEY_CURRENT_LOCATION_SELECTED, false) == true
-    }
-    
-    /**
-     * 現在地の選択状態を設定
-     */
-    fun setCurrentLocationSelected(selected: Boolean) {
-        prefs?.edit { putBoolean(KEY_CURRENT_LOCATION_SELECTED, selected) }
-        
-        if (selected) {
-            // 現在地を選択した場合は、住所の選択状態をクリア（コルーチン内で実行）
-            coroutineScope.launch {
-                clearSelectedAddressInDb()
+    // Temporary private mappers are removed.
+
+    override suspend fun addAddress(address: DomainSavedAddress): Result<Unit> {
+        return withContext(coroutineScope.coroutineContext) {
+            try {
+                Timber.tag(tag).d("Adding address: ${address.name}")
+                // Check if address with same name and coordinates already exists
+                val existingDbAddress = savedAddressDao.findAddressByNameAndCoordinates(
+                    address.name,
+                    address.coordinates.latitude,
+                    address.coordinates.longitude
+                )
+
+                if (existingDbAddress != null) {
+                    // Address exists, update it.
+                    // Use AddressMapper.mapDomainToDbEntity. The isSelected parameter defaults to false in the mapper
+                    // if not specified, which is suitable here. The ID from existingDbAddress must be preserved.
+                    val dbEntityToUpdate = AddressMapper.mapDomainToDbEntity(address).copy(id = existingDbAddress.id)
+                    savedAddressDao.insertAddress(dbEntityToUpdate) // insert acts as upsert due to onConflictStrategy
+                    Timber.tag(tag).d("Updated existing address: ${address.name}")
+                } else {
+                    // New address, insert it.
+                    // Use AddressMapper.mapDomainToDbEntity.
+                    // The ID should be 0 for Room to auto-generate if that's the strategy.
+                    // The isSelected parameter defaults to false in the mapper.
+                    val dbEntity = AddressMapper.mapDomainToDbEntity(address).copy(id = 0) // Ensure ID is 0 for auto-generation
+                    savedAddressDao.insertAddress(dbEntity)
+                    Timber.tag(tag).d("Inserted new address: ${address.name}")
+                }
+                Result.Success(Unit)
+            } catch (e: Exception) {
+                Timber.tag(tag).e(e, "Error adding address: ${address.name}")
+                Result.Error("Failed to add address: ${e.message}", e)
             }
         }
-        
-        Timber.d("現在地の選択状態を変更: $selected")
     }
-    
-    /**
-     * 最後に取得した位置情報を保存
-     */
-    fun saveLastKnownLocation(latitude: Double, longitude: Double) {
-        prefs?.edit {
-            putFloat(KEY_LAST_KNOWN_LAT, latitude.toFloat())
-            putFloat(KEY_LAST_KNOWN_LON, longitude.toFloat())
-        }
-        
-        Timber.d("最後に取得した位置情報を保存: $latitude, $longitude")
-    }
-    
-    /**
-     * 最後に取得した位置情報を取得
-     */
-    fun getLastKnownLocation(): Pair<Double, Double>? {
-        val lat = prefs?.getFloat(KEY_LAST_KNOWN_LAT, Float.NaN) ?: Float.NaN
-        val lon = prefs?.getFloat(KEY_LAST_KNOWN_LON, Float.NaN) ?: Float.NaN
-        
-        return if (!lat.isNaN() && !lon.isNaN()) {
-            Pair(lat.toDouble(), lon.toDouble())
-        } else {
-            null
-        }
-    }
-    
-    /**
-     * DB上で選択された住所の選択状態をクリア（内部メソッド）
-     */
-    private suspend fun clearSelectedAddressInDb() {
-        try {
-            val selectedAddress = savedAddressDao.getSelectedAddress()
-            
-            if (selectedAddress != null) {
-                // 選択状態を解除して更新
-                val updatedAddress = selectedAddress.copy(isSelected = false)
-                savedAddressDao.insertAddress(updatedAddress)
-                Timber.d("DB上の選択住所をクリアしました: ${selectedAddress.addressName}")
+
+    override suspend fun getSavedAddresses(): Flow<List<DomainSavedAddress>> {
+        return savedAddressDao.getAllAddressesFlow() // DAO returns Flow<List<DbSavedAddress>>
+            .map { dbAddressList ->
+                // Use AddressMapper to convert the list of DB entities to domain entities
+                // AddressMapper.mapDbEntityListToDomainList(dbAddressList)
+                // Or, map individually:
+                dbAddressList.map { dbEntity -> AddressMapper.mapDbEntityToDomain(dbEntity) }
             }
-        } catch (e: Exception) {
-            Timber.e(e, "DB上の選択住所クリアに失敗しました")
-        }
-    }
-    
-    suspend fun getAllAddresses(): List<Feature> {
-        return AddressMapper.toFeatures(savedAddressDao.getAllAddresses())
     }
 
-    suspend fun getSelectedAddress(): Feature? {
-        return savedAddressDao.getSelectedAddress()?.let {
-            AddressMapper.toFeature(it)
-        }
-    }
-
-    suspend fun saveAddress(feature: Feature, isSelected: Boolean = false): Long {
-        // 住所名と座標から既存の住所を検索
-        val (longitude, latitude) = feature.geometry.coordinates
-            .split(",")
-            .map { it.trim().toDouble() }
-            
-        val existingAddress = savedAddressDao.findAddressByNameAndCoordinates(
-            feature.name, latitude, longitude
-        )
-        
-        // 住所が選択された場合、現在地選択状態をクリア
-        if (isSelected) {
-            setCurrentLocationSelected(false)
-        }
-        
-        // 既存の住所が見つかった場合は、それを更新
-        if (existingAddress != null) {
-            Timber.d("既存の住所を更新: ${feature.name}")
-            val updatedAddress = existingAddress.copy(isSelected = isSelected)
-            val id = savedAddressDao.insertAddress(updatedAddress)
-            
-            if (isSelected) {
-                savedAddressDao.updateSelectedAddress(id)
+    override suspend fun deleteAddress(address: DomainSavedAddress): Result<Unit> {
+        return withContext(coroutineScope.coroutineContext) {
+            try {
+                Timber.tag(tag).d("Deleting address by name: ${address.name}")
+                // Assumes SavedAddressDao has deleteAddressByName(addressName: String)
+                // And that address.name corresponds to addressName in the DB
+                savedAddressDao.deleteAddressByName(address.name)
+                Result.Success(Unit)
+            } catch (e: Exception) {
+                Timber.tag(tag).e(e, "Error deleting address: ${address.name}")
+                Result.Error("Failed to delete address: ${e.message}", e)
             }
-            
-            return id
-        }
-        
-        // 新規住所の保存
-        Timber.d("新規住所を保存: ${feature.name}")
-        val savedAddress = AddressMapper.fromFeature(feature, isSelected)
-        val id = savedAddressDao.insertAddress(savedAddress)
-        
-        if (isSelected) {
-            savedAddressDao.updateSelectedAddress(id)
-        }
-        
-        return id
-    }
-
-    suspend fun deleteAddress(feature: Feature) {
-        try {
-            // 住所名で削除
-            Timber.d("住所を削除: ${feature.name}")
-            savedAddressDao.deleteAddressByName(feature.name)
-        } catch (e: Exception) {
-            Timber.e(e, "住所の削除に失敗: ${feature.name}")
-            throw e
         }
     }
-
-    suspend fun updateSelectedAddress(feature: Feature) {
-        try {
-            // 住所が選択された場合、現在地選択状態をクリア
-            setCurrentLocationSelected(false)
-            
-            val savedAddress = AddressMapper.fromFeature(feature, true)
-            
-            // 既存の住所を検索
-            val existingAddress = savedAddressDao.findAddressByName(feature.name)
-            
-            val id = if (existingAddress != null) {
-                // 既存の住所を更新
-                val updatedAddress = existingAddress.copy(isSelected = true)
-                savedAddressDao.insertAddress(updatedAddress)
-            } else {
-                // 新規住所として保存
-                savedAddressDao.insertAddress(savedAddress)
-            }
-            
-            savedAddressDao.updateSelectedAddress(id)
-        } catch (e: Exception) {
-            Timber.e(e, "選択住所の更新に失敗: ${feature.name}")
-            throw e
-        }
-    }
-
-    suspend fun clearSelectedAddress() {
-        try {
-            // 選択中の住所を取得
-            val selectedAddress = savedAddressDao.getSelectedAddress()
-            
-            if (selectedAddress != null) {
-                // 選択状態を解除して更新
-                val updatedAddress = selectedAddress.copy(isSelected = false)
-                savedAddressDao.insertAddress(updatedAddress)
-                Timber.d("選択住所の状態をクリアしました: ${selectedAddress.addressName}")
-            } else {
-                Timber.d("クリアする選択住所がありません")
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "選択住所のクリアに失敗しました")
-            throw e
-        }
-    }
-
-//    suspend fun getAddressCount(): Int {
-//        return savedAddressDao.getAddressCount()
-//    }
 }
